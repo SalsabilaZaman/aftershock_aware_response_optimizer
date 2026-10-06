@@ -1,0 +1,11 @@
+penalty,mode,tmcs_opened,unsafe_blind_picks,casualty_wtd_avg_dist_km,pct_casualties_over_30km,sub_districts_over_45km,rural_sub_districts,objective_casualty_km
+100,risk_blind,426,30,26.99,34.1,4,Andırın;Ekinözü;Elbistan;Çağlayancerit,3210624.43
+100,risk_aware,439,0,30.32,39.5,6,Andırın;Ekinözü;Elbistan;Göksun;Nurhak;Çağlayancerit,3603037.65
+300,risk_blind,410,30,27.01,34.1,4,Andırın;Ekinözü;Elbistan;Çağlayancerit,3294047.48
+300,risk_aware,411,0,30.36,39.3,6,Andırın;Ekinözü;Elbistan;Göksun;Nurhak;Çağlayancerit,3687700.73
+1000,risk_blind,377,26,27.16,34.1,4,Andırın;Ekinözü;Elbistan;Çağlayancerit,3565684.51
+1000,risk_aware,387,0,30.48,39.4,6,Andırın;Ekinözü;Elbistan;Göksun;Nurhak;Çağlayancerit,3964819.04
+3000,risk_blind,332,23,27.93,34.4,4,Andırın;Ekinözü;Elbistan;Çağlayancerit,4274383.74
+3000,risk_aware,333,0,31.3,39.4,6,Andırın;Ekinözü;Elbistan;Göksun;Nurhak;Çağlayancerit,4674073.22
+10000,risk_blind,274,21,30.82,36.7,6,Andırın;Ekinözü;Elbistan;Göksun;Pazarcık;Çağlayancerit,6357826.8
+10000,risk_aware,284,0,33.77,40.8,6,Andırın;Ekinözü;Elbistan;Göksun;Pazarcık;Çağlayancerit,6804973.12

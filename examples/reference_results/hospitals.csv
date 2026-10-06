@@ -1,0 +1,16 @@
+hospital_id,hospital_name,latitude,longitude,facility_type,bed_capacity_icu,bed_capacity_general,bed_capacity_total,outpatient_capacity,n_doctors_pre,n_nurses_pre,operational_capacity,effective_capacity_postquake,capacity_confidence,capacity_source
+H001,Kahramanmaraş Necip Fazıl Şehir Hastanesi,37.503,37.0044,Hospital,90,910,1000,3000,200,500,1.0,1000,official,https://necipfazildh.saglik.gov.tr/ (hospital history page: 6 buildings; 1000 beds; 90 ICU)
+H002,Kahramanmaraş Sütçü İmam Üniversitesi Sağlık Uygulama ve Araştırma Hastanesi,37.5879,36.8261,Hospital,60,540,600,1800,120,300,1.0,600,reported,Sources vary 400–600 beds; 600-bed new Avşar campus building per KSÜ announcements (hastane.ksu.edu.tr)
+H003,Elbistan Devlet Hastanesi,38.2035,37.1587,Hospital,38,340,378,1134,75,189,1.0,378,reported,https://www.trhastane.com/elbistan-devlet-hastanesi-2499.html (300-bed 2017 building expanded to 378)
+H004,Afşin Devlet Hastanesi,38.2367,36.8961,Hospital,15,135,150,450,30,75,1.0,150,reported,https://ihaledunyasi.net/hastaneler/hastanedetay/3310/afsin-devlet-hastanesi and yesilafsin.com (150 beds)
+H005,Pazarcık Devlet Hastanesi,37.5027,37.3232,Hospital,12,113,125,375,25,62,0.0,0,reported,https://www.hekimpostasi.com/maras-depremi-sonrasinda-hastanelere-iliskin-bilgiler-831 (125 beds as of Feb 2022)
+H006,Türkoğlu Dr. Kemal Beyazıt Devlet Hastanesi,37.3904,36.8667,Hospital,11,99,110,330,22,55,1.0,110,reported,https://www.trhastane.com/turkoglu-dr-kemal-beyazit-devlet-hastanesi-9394.html (60-bed main + 50-bed physical therapy)
+H007,Göksun Dr. Süreyya Adanalı Devlet Hastanesi,38.0298,36.5504,Hospital,7,68,75,225,15,37,1.0,75,reported,https://www.trhastane.com/dr-sureyya-adanali-goksun-devlet-hastanesi-2362.html (75-bed new building)
+H008,Andırın Devlet Hastanesi,37.5678,36.347,Hospital,0,30,30,90,6,15,1.0,30,reported,trhastane.com / local news (30-bed building completed 2020)
+H009,Çağlayancerit Devlet Hastanesi,37.7461,37.2932,Health Centre,0,10,10,30,2,5,1.0,10,reported,trhastane.com (10 beds; opened 2010)
+H010,Nurhak Devlet Hastanesi,37.9656,37.4681,Health Centre,0,15,15,45,3,7,1.0,15,estimated,Pre-quake size unverified; the 50-bed steel building (aa.com.tr) opened post-quake 2024 and must NOT be used for the Feb 2023 scenario
+H011,Ekinözü İlçe Devlet Hastanesi,38.0561,37.1875,Health Centre,0,10,10,30,2,5,1.0,10,estimated,Listed in tr.wikipedia.org Türkiye'deki hastaneler listesi; size unverified
+H012,Özel Sular Akademi Hastanesi,37.5655,36.9296,Clinic,6,54,60,180,12,30,1.0,60,estimated,Private hospital; bed count not published — typical mid-size private estimate
+H013,Özel Markasi Hastanesi,37.5702,36.9592,Clinic,4,36,40,120,8,20,1.0,40,estimated,Private hospital; bed count not published — typical small private estimate
+H014,Özel Hayat Hastanesi,37.5776,36.9288,Clinic,4,36,40,120,8,20,1.0,40,estimated,Private hospital; bed count not published — typical small private estimate
+H015,Özel Elbistan Yaşam Hastanesi,38.2061,37.1848,Clinic,5,45,50,150,10,25,1.0,50,estimated,Private hospital; bed count not published — typical small private estimate

@@ -1,0 +1,83 @@
+# Single source of truth for every extraction parameter.
+# Override any value at the CLI: run_extraction.py --set event.min_magnitude=2.5
+# Paths are relative to the repository root.
+
+study_area:
+  # Seismic/hazard bbox — full study area (aftershocks, DEM, Vs30)
+  bbox: {south: 36.5, north: 38.5, west: 35.5, east: 38.5}
+  # Tight Kahramanmaraş province bbox — candidate sites (excludes Gaziantep/Malatya)
+  province_bbox: {south: 36.9, north: 38.5, west: 36.2, east: 37.8}
+  # City-level bbox for the road network (candidate-site area only; the full
+  # province graph is too large to download/process in one Overpass request)
+  road_bbox: {south: 37.45, north: 37.70, west: 36.80, east: 37.05}
+  utm_epsg: 32637          # UTM zone 37N — metric CRS for distance computations
+  province_name: "Kahramanmaraş"
+
+event:
+  # 2023-02-06 04:17 local (TRT, UTC+3) = 01:17:35 UTC. Keep UTC here — the
+  # USGS catalog is UTC and Omori t_days is measured from this instant.
+  mainshock_utc: "2023-02-06T01:17:35"
+  usgs_event_id: "us6000jllz"     # Mw 7.8 Pazarcık mainshock
+  window_start: "2023-02-06"
+  window_end: "2023-03-08"        # 30-day aftershock window
+  min_magnitude: 2.0              # catalog completeness threshold (Mc)
+  max_aftershock_magnitude: 7.5   # excludes the Mw 7.8/7.5 mainshocks
+
+terrain:
+  dem_type: "SRTMGL1"             # SRTM 30 m
+  # OpenTopography key: read from this env var; fall back to config value
+  api_key_env: "OPENTOPO_API_KEY"
+  # Optional local override only. Set OPENTOPO_API_KEY in your environment.
+  # Never commit service keys to the repository.
+
+vs30:
+  soil_threshold_ms: 360          # Vs30 <= 360 m/s -> soil (site class D+), else rock
+  plausible_range_ms: [100, 2000]
+
+damage:
+  buffer_m: 500                   # damage-count radius around each site
+  aoi_pad_deg: 0.09               # ~10 km pad around AOI04 bounds for site tagging
+
+casualties:
+  # AFAD official totals for the whole earthquake sequence
+  total_injured: 107204
+  total_dead: 50783
+  n_scenarios: 20
+  uncertainty_cv: 0.30
+  period_rates: [0.60, 0.25, 0.10, 0.05]
+  triage_splits: {T1: 0.20, T2: 0.30, T3: 0.50}
+
+paths:
+  raw_usgs_catalog: "data_raw/usgs/usgs_raw.csv"
+  raw_osm_sites: "data_raw/osm/osm_sites_raw.json"
+  raw_dem: "data_raw/dem/srtm_tile.tif"
+  raw_road_graph: "data_raw/osm/road_graph.pkl"
+  raw_vs30: "data_raw/vs30/global_vs30.grd"
+  raw_damage_shp: "data_raw/copernicus_builtUpA/EMSR648_AOI04_GRA_PRODUCT_builtUpA_r1_v1.shp"
+  raw_hospitals_curated: "data_raw/hospitals/hospital_capacity_curated.csv"
+  raw_hospitals_osm: "data_raw/osm/hospitals_osm.json"
+  raw_pager: "data_raw/usgs/pager_us6000jllz.json"
+  out_catalog: "data_processed/seismic/aftershock_catalog.csv"
+  out_sites: "data_processed/sites/candidate_sites.csv"
+  out_sites_aoi04: "data_processed/sites/candidate_sites_aoi04.csv"
+  out_site_area: "data_processed/sites/site_area_per_site.csv"
+  out_topography: "data_processed/sites/topography_per_site.csv"
+  out_accessibility: "data_processed/sites/accessibility_per_site.csv"
+  out_vs30: "data_processed/sites/site_condition_per_site.csv"
+  out_damage: "data_processed/sites/damage_indicators_per_site.csv"
+  out_hospitals: "data_processed/hospitals/hospital_data.csv"
+  out_sub_districts: "data_processed/casualties/sub_districts_raw.csv"
+  out_casualties: "data_processed/casualties/casualty_projections.csv"
+
+# Documented expectations; a row count deviating >5% is flagged review_needed
+expected_counts:
+  aftershock_catalog: null       # varies with USGS revisions — no fixed expectation
+  candidate_sites: 522
+  sites_aoi04: 180
+  hospitals: 15                  # curated set (was 17 in the superseded hand-made file)
+  sub_districts: 11
+  row_count_tolerance: 0.05
+
+# When false, extractors reuse cached raw files if present (network-friendly);
+# --set force_refetch=true re-downloads everything
+force_refetch: false

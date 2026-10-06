@@ -1,0 +1,13 @@
+{
+  "replications": 5,
+  "training_scenarios_per_replication": 10,
+  "validation_draws_per_policy": 50,
+  "budgets": [
+    0,
+    10,
+    25,
+    50,
+    100,
+    120
+  ]
+}

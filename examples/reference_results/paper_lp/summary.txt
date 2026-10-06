@@ -1,0 +1,16 @@
+Paper-style scenario-wise medical response LP
+Solver: HiGHS
+Scenarios solved: 20
+Probability-weighted totals/means:
+  Z1: 30055.410872
+  Z2: 317016.582674
+  Z3: 18799.791878
+  served_fraction: 0.826930
+  generated_casualties: 109397.200000
+  served_casualties: 90206.622322
+  unmet_casualties: 30055.410902
+  tmcs_with_assigned_casualties: 93.300000
+  tmcs_with_assigned_staff: 93.300000
+  tmcs_with_casualties_or_staff: 93.300000
+  staff_added: 18799.791878
+Worst case by Z1: scenario 14 (Z1=42978.913845, served=81.69%)

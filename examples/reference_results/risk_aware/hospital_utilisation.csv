@@ -1,0 +1,15 @@
+site_id,hospital_id,hospital_name,cap_j,assigned_casualties,utilisation_pct
+JH_H001,H001,Kahramanmaraş Necip Fazıl Şehir Hastanesi,1000.0,1000.0,100.0
+JH_H002,H002,Kahramanmaraş Sütçü İmam Üniversitesi Sağlık Uygulama ve Araştırma Hastanesi,600.0,600.0,100.0
+JH_H003,H003,Elbistan Devlet Hastanesi,378.0,378.0,100.0
+JH_H004,H004,Afşin Devlet Hastanesi,150.0,150.0,100.0
+JH_H006,H006,Türkoğlu Dr. Kemal Beyazıt Devlet Hastanesi,110.0,110.0,100.0
+JH_H007,H007,Göksun Dr. Süreyya Adanalı Devlet Hastanesi,75.0,75.0,100.0
+JH_H008,H008,Andırın Devlet Hastanesi,30.0,30.0,100.0
+JH_H009,H009,Çağlayancerit Devlet Hastanesi,10.0,10.0,100.0
+JH_H010,H010,Nurhak Devlet Hastanesi,15.0,15.0,100.0
+JH_H011,H011,Ekinözü İlçe Devlet Hastanesi,10.0,10.0,100.0
+JH_H012,H012,Özel Sular Akademi Hastanesi,60.0,60.0,100.0
+JH_H013,H013,Özel Markasi Hastanesi,40.0,40.0,100.0
+JH_H014,H014,Özel Hayat Hastanesi,40.0,40.0,100.0
+JH_H015,H015,Özel Elbistan Yaşam Hastanesi,50.0,50.0,100.0
