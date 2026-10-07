@@ -28,6 +28,7 @@ import yaml
 
 EXTRACTION_DIR = Path(__file__).resolve().parent
 CODE_ROOT = EXTRACTION_DIR.parents[1]  # this repo checkout — code/config always live here
+MODEL_LABELS_PATH = CODE_ROOT / "pipelines" / "model_labels.json"
 # PIPELINE_ROOT lets a job-scoped demo run (pipelines/run_demo_job.py) point
 # data reads/writes at an isolated bundle while config.yaml/code stay fixed
 # in this repo checkout (CODE_ROOT).
@@ -303,6 +304,7 @@ def run(config: dict):
         from settings import PGA_MAX  # noqa
     except Exception:
         PGA_MAX = None
+    model_labels = json.loads(MODEL_LABELS_PATH.read_text(encoding="utf-8"))
     manifest = {
         "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "scenarios": [{
@@ -319,6 +321,7 @@ def run(config: dict):
         }],
         "files": inventory,
         "validation": validation,
+        "model_labels": model_labels,
     }
     with open(OUT_DIR / "scenario_manifest.json", "w", encoding="utf-8") as f:
         json.dump(manifest, f, indent=2, ensure_ascii=False)

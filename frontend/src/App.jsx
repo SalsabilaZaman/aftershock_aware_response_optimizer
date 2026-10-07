@@ -19,12 +19,6 @@ const TAB_LABELS = {
   briefing: 'Briefing', hazard: 'Hazard & site ranking', siting: 'Siting plan',
   medical: 'Medical response', robustness: 'Robustness', research: 'Research lab',
 };
-const MODEL_LABELS = {
-  risk_blind: 'Risk-blind MILP', risk_aware: 'Risk-aware MILP',
-  paper_lp_all_candidates: 'Paper LP · all candidates', paper_lp_topsis_120: 'Paper LP · TOPSIS top 120',
-  saa_all_candidates: 'SAA · all candidates', saa_topsis_120: 'SAA · TOPSIS top 120',
-};
-
 const Brand = () => (
   <div className="brand">
     <span className="brand-mark" aria-hidden="true">◆</span>
@@ -44,17 +38,17 @@ export default function App() {
   const [error, setError] = useState(null);
   const [detailSiteId, setDetailSiteId] = useState(null);
   const [aboutOpen, setAboutOpen] = useState(false);
-  const [modelOptions, setModelOptions] = useState([]);
+  const [modelOptions, setModelOptions] = useState({ choices: [], candidate_sets: {}, candidate_set_label: 'Candidate set' });
   const [scenarioId, setScenarioId] = useState('all');
-  const { view, setView, model, setModel, detail, setDetail } = useUrlState();
+  const { view, setView, model, setModel, candidateSet, setCandidateSet, detail, setDetail } = useUrlState();
 
   const exportSelectedRun = async () => {
-    const profile = model.endsWith('120') ? 'topsis_120' : 'all_candidates';
+    const profile = candidateSet;
     const selectedModeKey = model === 'risk_blind' ? 'risk_blind' : 'risk_aware';
-    const bundle = { model_id: model, profile_id: model.startsWith('paper_lp') || model.startsWith('saa_') ? profile : null,
+    const bundle = { model_id: model, profile_id: ['paper_lp', 'saa'].includes(model) ? profile : null,
       run_id: manifest?.data_source?.job_id ?? 'reference', exported_at: new Date().toISOString(), selected_view: view };
     try {
-      if (model.startsWith('paper_lp')) {
+      if (model === 'paper_lp') {
         const [result, siteRows] = await Promise.all([fetchJson(`/api/paper-lp/${profile}`), fetchJson('/api/sites')]);
         bundle.casualty_allocations = result.casualty_allocation;
         bundle.staff_allocations = result.staffing_plan;
@@ -62,7 +56,7 @@ export default function App() {
         const lpTotal = (key) => result.scenario_rows.reduce((sum, row) => sum + Number(row.scenario_prob || 0) * Number(row[key] || 0), 0);
         bundle.summary = { expected_served_fraction: lpTotal('served_fraction'), expected_unmet_casualties: lpTotal('Z1'), expected_Z2: lpTotal('Z2'), expected_Z3: lpTotal('Z3') };
         bundle.ranked_sites = siteRows.filter((s) => Number.isFinite(Number(s.rank))).sort((a, b) => Number(a.rank) - Number(b.rank));
-      } else if (model.startsWith('saa_')) {
+      } else if (model === 'saa') {
         const [result, siteRows] = await Promise.all([fetchJson(`/api/saa/${profile}`), fetchJson('/api/sites')]);
         bundle.budget_results = result.budget_rows;
         bundle.summary = result.budget_rows.reduce((a, b) => Number(b.budget) > Number(a?.budget ?? -Infinity) ? b : a, null);
@@ -90,7 +84,7 @@ export default function App() {
     setError(null);
     fetchJson('/api/scenarios').then(setManifest).catch((e) => setError(e.message));
     fetchJson('/api/sites').then(setSites).catch((e) => setError(e.message));
-    fetchJson('/api/model-options').then((r) => setModelOptions(r.choices ?? [])).catch(() => setModelOptions([]));
+    fetchJson('/api/model-options').then(setModelOptions).catch(() => setModelOptions({ choices: [], candidate_sets: {} }));
   };
 
   useEffect(() => {
@@ -99,6 +93,13 @@ export default function App() {
   }, []);
 
   const openDetail = (siteId) => setDetailSiteId(siteId);
+  const selectedModelOption = modelOptions.choices.find((item) => item.id === model);
+  const modelLabels = manifest?.model_labels?.models ?? {};
+  const selectedModelLabel = selectedModelOption?.label ?? modelLabels[model] ?? model;
+  const candidateSetLabel = modelOptions.candidate_sets?.[candidateSet] ?? manifest?.model_labels?.candidate_sets?.[candidateSet] ?? candidateSet;
+  const isCandidateProfileModel = model === 'paper_lp' || model === 'saa';
+  const selectedProfileAvailable = isCandidateProfileModel
+    ? selectedModelOption?.profiles?.[candidateSet]?.available : selectedModelOption?.available;
 
   return (
     <div className="app">
@@ -111,7 +112,7 @@ export default function App() {
                 Reference results · {fmtShortDate(manifest.generated_utc)}
               </span>
             )}
-            <button className="link-btn" onClick={() => setAboutOpen(true)}>About this run</button>
+            <button className="link-btn" onClick={() => setAboutOpen(true)}>How to read this</button>
             <button className="btn-ghost" onClick={exportSelectedRun}>Export selected run</button>
           </div>
         </div>
@@ -129,15 +130,19 @@ export default function App() {
             <button className={detail === 'research' ? 'active' : ''} onClick={() => setDetail('research')}>Research</button>
           </div>
         </div>
-        <div className="model-selector" aria-label="Model variant">
-          {MODELS.map((id) => {
-            const option = modelOptions.find((item) => item.id === id);
-            const available = option?.available ?? false;
-            return <button key={id} className={model === id ? 'active' : ''} disabled={!available}
-              title={available ? MODEL_LABELS[id] : `${MODEL_LABELS[id]} · results unavailable`}
-              onClick={() => setModel(id)}>{MODEL_LABELS[id]}{!available && <small>Unavailable</small>}</button>;
-          })}
-        </div>
+        {view !== 'hazard' && <div className="model-controls">
+          <div className="model-selector" aria-label="Model">
+            {MODELS.map((id) => {
+              const option = modelOptions.choices.find((item) => item.id === id);
+              const label = option?.label ?? modelLabels[id] ?? id;
+              return <button key={id} className={model === id ? 'active' : ''} aria-pressed={model === id} onClick={() => setModel(id)}>{label}</button>;
+            })}
+          </div>
+          {isCandidateProfileModel && <div className="candidate-set-selector" role="group" aria-label={modelOptions.candidate_set_label ?? 'Candidate set'}>
+            <span>{modelOptions.candidate_set_label ?? 'Candidate set'}</span>
+            {Object.entries(modelOptions.candidate_sets ?? {}).map(([id, label]) => <button key={id} className={candidateSet === id ? 'active' : ''} aria-pressed={candidateSet === id} onClick={() => setCandidateSet(id)}>{label}</button>)}
+          </div>}
+        </div>}
       </header>
 
       {error && (
@@ -146,21 +151,23 @@ export default function App() {
         </div>
       )}
 
-      {view === 'briefing' && <Briefing model={model} manifest={manifest} detail={detail} />}
-      {view === 'hazard' && <Hazard manifest={manifest} sites={sites} mode={model === 'risk_blind' ? 'blind' : 'aware'} modeKey={model === 'risk_blind' ? 'risk_blind' : 'risk_aware'} onSelectSite={openDetail} />}
-      {view === 'siting' && (model.startsWith('paper_lp') || model.startsWith('saa_')
-        ? <><StochasticSiting model={model} scenarioId={scenarioId} onScenarioChange={setScenarioId} /><ProfileComparison model={model} sites={sites} /></>
-        : <><AllocationMap modeKey={model === 'risk_blind' ? 'risk_blind' : 'risk_aware'} /><Compare sites={sites} onSelectSite={openDetail} /></>)}
-      {view === 'medical' && (model.startsWith('paper_lp')
-        ? <PaperLPResults profile={model.endsWith('120') ? 'topsis_120' : 'all_candidates'} scenarioId={scenarioId} onScenarioChange={setScenarioId} detail={detail} />
-        : model.startsWith('saa_')
-          ? <SAAMedicalResponse profile={model.endsWith('120') ? 'topsis_120' : 'all_candidates'} detail={detail} />
+      {view === 'briefing' && <Briefing model={model} candidateSet={candidateSet} manifest={manifest} detail={detail} />}
+      {view === 'hazard' && <Hazard manifest={manifest} sites={sites} onSelectSite={openDetail} />}
+      {view === 'siting' && (isCandidateProfileModel
+        ? <><StochasticSiting model={model} profile={candidateSet} scenarioId={scenarioId} onScenarioChange={setScenarioId} /><ProfileComparison model={model} sites={sites} /></>
+        : <><AllocationMap modeKey={model} /><Compare sites={sites} onSelectSite={openDetail} /></>)}
+      {view === 'medical' && (model === 'paper_lp'
+        ? <PaperLPResults profile={candidateSet} scenarioId={scenarioId} onScenarioChange={setScenarioId} detail={detail} />
+        : model === 'saa'
+          ? <SAAMedicalResponse profile={candidateSet} detail={detail} />
           : <div className="notice info"><b>Medical response detail unavailable for this run.</b><br />The selected model export does not include period-level casualty allocations or staffing by triage. Facility occupancy and health-state transitions are also unavailable in the current results.</div>)}
-      {view === 'robustness' && (model.startsWith('saa_')
-        ? <SAAResults profile={model.endsWith('120') ? 'topsis_120' : 'all_candidates'} comparison />
-        : model.startsWith('paper_lp') ? <ProfileComparison model={model} sites={sites} />
+      {view === 'robustness' && (model === 'saa'
+        ? <SAAResults profile={candidateSet} comparison />
+        : model === 'paper_lp' ? <ProfileComparison model={model} sites={sites} />
           : <div className="notice info">Robustness results are unavailable for this model. Sensitivity and out-of-sample measures are only shown for exported stochastic runs.</div>)}
-      {view === 'research' && <ResearchLab model={model} detail={detail} manifest={manifest} />}
+      {view === 'research' && <ResearchLab model={model} candidateSet={candidateSet} detail={detail} manifest={manifest} />}
+
+      {view !== 'hazard' && selectedProfileAvailable === false && <div className="notice info" role="status">{selectedModelLabel}{isCandidateProfileModel ? ` · ${candidateSetLabel}` : ''} results are not included in this data bundle.</div>}
 
       {detailSiteId && (
         <SiteDetail siteId={detailSiteId} onClose={() => setDetailSiteId(null)} />

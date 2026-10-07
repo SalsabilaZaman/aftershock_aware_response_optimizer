@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-10-04T09:51:34+00:00",
+  "generated_utc": "2026-10-07T15:31:23+00:00",
   "scenarios": [
     {
       "id": "kahramanmaras_2023_30d",
@@ -10,7 +10,7 @@
         "2023-02-06",
         "2023-03-08"
       ],
-      "min_magnitude": 2.0,
+      "min_magnitude": 2,
       "bbox": {
         "south": 36.5,
         "north": 38.5,
@@ -90,7 +90,7 @@
     },
     "saa/budget_sweep_out_of_sample_by_draw.csv": {
       "status": "ok",
-      "rows": 24950
+      "rows": 61000
     },
     "saa/run_metadata.json": {
       "status": "ok",
@@ -125,6 +125,74 @@
       "rows": 733,
       "excluded_by_pga_filter": 34,
       "blind_picks_unsafe": 26
+    },
+    "paper_lp/all_candidates/scenario_results.csv": {
+      "status": "ok",
+      "rows": 20
+    },
+    "paper_lp/all_candidates/casualty_allocation.csv": {
+      "status": "ok",
+      "rows": 8706
+    },
+    "paper_lp/all_candidates/unmet_by_triage.csv": {
+      "status": "ok",
+      "rows": 879
+    },
+    "paper_lp/all_candidates/staffing_plan.csv": {
+      "status": "ok",
+      "rows": 8336
+    },
+    "paper_lp/all_candidates/sensitivity_summary.csv": {
+      "status": "ok",
+      "rows": 132
+    },
+    "paper_lp/all_candidates/run_metadata.json": {
+      "status": "ok",
+      "rows": 1
+    },
+    "paper_lp/topsis_120/scenario_results.csv": {
+      "status": "ok",
+      "rows": 20
+    },
+    "paper_lp/topsis_120/casualty_allocation.csv": {
+      "status": "ok",
+      "rows": 7451
+    },
+    "paper_lp/topsis_120/unmet_by_triage.csv": {
+      "status": "ok",
+      "rows": 879
+    },
+    "paper_lp/topsis_120/staffing_plan.csv": {
+      "status": "ok",
+      "rows": 6185
+    },
+    "paper_lp/topsis_120/sensitivity_summary.csv": {
+      "status": "ok",
+      "rows": 132
+    },
+    "paper_lp/topsis_120/run_metadata.json": {
+      "status": "ok",
+      "rows": 1
+    },
+    "saa/objective_components_by_budget.csv": {
+      "status": "ok",
+      "rows": 6
+    },
+    "saa/detailed_casualty_allocation.csv": {
+      "status": "ok",
+      "rows": 265
+    },
+    "saa/detailed_staffing.csv": {
+      "status": "ok",
+      "rows": 206
+    },
+    "saa/detailed_unmet.csv": {
+      "status": "ok",
+      "rows": 55
+    },
+    "saa/detailed_policy_sites.csv": {
+      "status": "ok",
+      "rows": 25
     }
   },
   "validation": {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer,
+  CartesianGrid, Line, LineChart, ResponsiveContainer,
   Tooltip as RTooltip, XAxis, YAxis,
 } from 'recharts';
 import { fetchJson } from '../api.js';
@@ -23,7 +23,16 @@ export default function SAAResults({ profile = 'topsis_120', comparison = false 
 
   const rows = result.budget_rows;
   const meta = result.metadata;
-  const baseline = rows[0]?.deterministic_expected_served_fraction;
+  const reference25 = rows.find((r) => Number(r.budget) === 25);
+  const expected25 = reference25 ? Number(reference25.out_of_sample_expected_unmet_casualties) /
+    Math.max(1e-9, 1 - Number(reference25.out_of_sample_expected_served_fraction)) : null;
+  const atBudget = (budget) => rows.find((row) => Number(row.budget) === budget);
+  const zero = Number(atBudget(0)?.out_of_sample_expected_served_fraction);
+  const at25 = Number(atBudget(25)?.out_of_sample_expected_served_fraction);
+  const at120 = Number(atBudget(120)?.out_of_sample_expected_served_fraction);
+  const benefitCaptured = Number.isFinite(at25) && Number.isFinite(at120) && at120 > zero
+    ? (at25 - zero) / (at120 - zero) : null;
+  const maxFitGap = Math.max(0, ...rows.map((row) => Math.abs(Number(row.in_sample_expected_served_fraction) - Number(row.out_of_sample_expected_served_fraction))));
   const replicationCount = meta.replications ?? 'N/A';
 
   return (
@@ -37,22 +46,22 @@ export default function SAAResults({ profile = 'topsis_120', comparison = false 
           The out-of-sample standard deviation summarizes variation across replication means;
           it is not a confidence interval.
         </p>
+        <p className="muted">At the 25-site policy, total expected casualties are about {fmtInt(expected25)}. This scenario-based SAA total differs from the deterministic MILP’s fixed 117,398 projection because the models use different demand and recourse assumptions.</p>
       </div>
 
       <div className="panel">
         <h3>Expected casualty service by TMC budget</h3>
+        {benefitCaptured != null && benefitCaptured >= 0.98 && <p className="notice info">A 25-site policy captures {fmt(benefitCaptured * 100, 1)}% of the service gain achieved by a 120-site budget in this run.</p>}
         <ResponsiveContainer width="100%" height={340}>
-          <LineChart data={rows} margin={{ top: 16, right: 24, left: 8, bottom: 8 }}>
+          <LineChart data={rows} margin={{ top: 16, right: 24, left: 8, bottom: 28 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--ink-200)" />
-            <XAxis dataKey="budget" type="number" domain={['dataMin', 'dataMax']} ticks={meta.budgets} label={{ value: 'Maximum new TMC sites', position: 'insideBottom', offset: -4 }} />
+            <XAxis dataKey="budget" type="number" domain={['dataMin', 'dataMax']} ticks={meta.budgets} label={{ value: 'Maximum new TMC sites', position: 'insideBottom', offset: -20 }} />
             <YAxis domain={[0, 1]} tickFormatter={pct} width={58} />
             <RTooltip formatter={(value, name) => [pct(value), name]} labelFormatter={(value) => `Budget: ${value} TMCs`} />
-            <Legend />
-            <ReferenceLine y={baseline} stroke="var(--ink-500)" strokeDasharray="5 4" label={{ value: 'Deterministic baseline', position: 'insideTopRight', fontSize: 11, fill: 'var(--ink-500)' }} />
-            <Line type="monotone" dataKey="in_sample_expected_served_fraction" name="In-sample" stroke="var(--dist-3)" strokeWidth={2} dot={{ r: 4 }} isAnimationActive={false} />
             <Line type="monotone" dataKey="out_of_sample_expected_served_fraction" name="Out-of-sample validation" stroke="var(--dist-5)" strokeWidth={2.5} dot={{ r: 4 }} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
+        <p className="muted">Chart shows out-of-sample validation. In-sample and out-of-sample estimates differ by at most {fmt(maxFitGap * 100, 2)} percentage points in this run. The deterministic MILP is a different fixed-demand model and is not drawn as a line on this budget chart.</p>
       </div>
 
       <SortableTable

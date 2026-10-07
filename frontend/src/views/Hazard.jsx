@@ -1,16 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Tooltip } from 'react-leaflet';
 import { fetchJson } from '../api.js';
-import { P_UNSAFE_BINS, pUnsafeColor, STUDY_BOUNDS } from '../hazard.js';
+import { STUDY_BOUNDS } from '../hazard.js';
 import { fmt, fmtInt, displaySiteName } from '../format.js';
 import { MetricPanel } from '../components/Metrics.jsx';
 
 const PGA_MAX = 0.2;
+const PGA_COLORS = ['#dce8e5', '#99beb4', '#e9bd72', '#d47758'];
 
 // Merged scenario overview + hazard map: they were two half-empty tabs
 // answering the same question ("where and how bad is the hazard?").
 export default function Hazard({ manifest, sites, mode, modeKey, onSelectSite }) {
   const [capacityBySite, setCapacityBySite] = useState({});
+  const [siteStatus, setSiteStatus] = useState([]);
   const [activeBand, setActiveBand] = useState(null);
 
   useEffect(() => {
@@ -26,33 +28,42 @@ export default function Hazard({ manifest, sites, mode, modeKey, onSelectSite })
     return () => { cancelled = true; };
   }, [modeKey]);
 
+  useEffect(() => {
+    fetchJson('/api/site_status').then(setSiteStatus).catch(() => setSiteStatus([]));
+  }, []);
+
   const scenario = manifest?.scenarios?.[0];
   const st = scenario?.stats ?? {};
 
   const bandCounts = useMemo(() => {
-    if (!sites) return [];
-    return P_UNSAFE_BINS.map((b, i) => {
-      const lo = i === 0 ? 0 : P_UNSAFE_BINS[i - 1].max;
-      const count = sites.filter((s) => s.P_unsafe != null && s.P_unsafe >= lo && s.P_unsafe < b.max).length;
-      return { ...b, lo, count };
-    });
+    const values = (sites ?? []).filter((s) => s.PGA_representative_g != null).map((s) => Number(s.PGA_representative_g)).filter(Number.isFinite).sort((a, b) => a - b);
+    if (!values.length) return [];
+    const cuts = [0, 0.5, 0.8, 0.95, 1].map((q) => values[Math.min(values.length - 1, Math.floor(q * (values.length - 1)))]);
+    return [
+      { lo: -Infinity, max: cuts[1], label: `Lowest half · < ${cuts[1].toFixed(2)} g`, color: PGA_COLORS[0] },
+      { lo: cuts[1], max: cuts[2], label: `50th–80th percentile · < ${cuts[2].toFixed(2)} g`, color: PGA_COLORS[1] },
+      { lo: cuts[2], max: cuts[3], label: `80th–95th percentile · < ${cuts[3].toFixed(2)} g`, color: PGA_COLORS[2] },
+      { lo: cuts[3], max: Infinity, label: `Highest 5% · ≥ ${cuts[3].toFixed(2)} g`, color: PGA_COLORS[3] },
+    ].map((band) => ({ ...band, count: values.filter((v) => v >= band.lo && v < band.max).length }));
   }, [sites]);
 
   const visibleSites = useMemo(() => {
     if (!sites) return [];
     if (!activeBand) return sites;
-    return sites.filter((s) => s.P_unsafe != null && s.P_unsafe >= activeBand.lo && s.P_unsafe < activeBand.max);
+    return sites.filter((s) => s.PGA_representative_g != null && Number.isFinite(Number(s.PGA_representative_g)) && Number(s.PGA_representative_g) >= activeBand.lo && Number(s.PGA_representative_g) < activeBand.max);
   }, [sites, activeBand]);
 
   if (!manifest || !sites) return <div className="notice info">Loading hazard data…</div>;
   if (!scenario) return <div className="notice">No scenarios in the manifest.</div>;
 
   const worstSite = sites.reduce(
-    (best, s) => (Number.isFinite(s.P_unsafe) && (!best || s.P_unsafe > best.P_unsafe) ? s : best),
+    (best, s) => (s.PGA_representative_g != null && Number.isFinite(Number(s.PGA_representative_g)) && (!best || Number(s.PGA_representative_g) > Number(best.PGA_representative_g)) ? s : best),
     null,
   );
-  const highestPUnsafe = worstSite?.P_unsafe ?? null;
-  const isOverThreshold = (worstSite?.PGA_representative_g ?? 0) > PGA_MAX;
+  const pgaValues = sites.filter((s) => s.PGA_representative_g != null).map((s) => Number(s.PGA_representative_g)).filter(Number.isFinite);
+  const unsafeCount = pgaValues.filter((v) => v > PGA_MAX).length;
+  const highPgaNonTmc = sites.filter((s) => s.PGA_representative_g != null && Number(s.PGA_representative_g) > PGA_MAX && s.facility_type === 'hospital').length;
+  const filteredCandidateCount = siteStatus.filter((s) => s.excluded_by_pga_filter).length;
   const center = [37.575, 36.937];
 
   const radiusFor = (s) => {
@@ -64,17 +75,15 @@ export default function Hazard({ manifest, sites, mode, modeKey, onSelectSite })
   return (
     <section>
       <MetricPanel
-        signal={isOverThreshold ? 'hazard' : undefined}
+        signal={unsafeCount ? 'hazard' : undefined}
         lead={{
-          value: fmt(highestPUnsafe, 3),
-          label: 'Highest P(unsafe) among candidate sites',
-          sub: isOverThreshold
-            ? `Above the 0.2g PGA threshold at the most exposed site (${fmt(worstSite.PGA_representative_g, 2)}g)`
-            : '30-day probability of exceeding 0.2g at the most exposed site',
+          value: `${unsafeCount} / ${fmtInt(pgaValues.length)}`,
+          label: 'Candidate sites above 0.2 g PGA',
+          sub: `${unsafeCount} of ${fmtInt(pgaValues.length)} sites with PGA exceed the screen, including ${highPgaNonTmc} hospital-type locations not eligible as TMCs. Worst: ${fmt(worstSite?.PGA_representative_g, 3)} g · ${displaySiteName(worstSite)}`,
         }}
         support={[
           { label: 'Aftershocks recorded', value: fmtInt(st.aftershocks_in_window) },
-          { label: 'Candidate sites', value: fmtInt(st.candidate_sites) },
+          { label: 'TMC candidates excluded by PGA screen', value: fmtInt(filteredCandidateCount) },
           { label: 'Sites with damage imagery', value: fmtInt(st.sites_aoi04_highres) },
           { label: 'Peak ground acceleration', value: st.pga_g ? `${fmt(st.pga_g.min)}–${fmt(st.pga_g.max)} g` : '—' },
         ]}
@@ -94,8 +103,8 @@ export default function Hazard({ manifest, sites, mode, modeKey, onSelectSite })
           preferCanvas
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           {visibleSites.map((s) => (
             <CircleMarker
@@ -105,7 +114,7 @@ export default function Hazard({ manifest, sites, mode, modeKey, onSelectSite })
               pathOptions={{
                 color: 'rgba(20,23,28,0.55)',
                 weight: 1,
-                fillColor: pUnsafeColor(s.P_unsafe),
+                fillColor: s.PGA_representative_g == null ? '#9aa1ab' : (PGA_COLORS[bandCounts.findIndex((b) => Number(s.PGA_representative_g) >= b.lo && Number(s.PGA_representative_g) < b.max)] ?? '#9aa1ab'),
                 fillOpacity: 0.9,
               }}
               eventHandlers={{ click: () => onSelectSite(s.site_id) }}
@@ -113,16 +122,16 @@ export default function Hazard({ manifest, sites, mode, modeKey, onSelectSite })
               <Tooltip>
                 <b>{displaySiteName(s)}</b>
                 <br />
-                P(unsafe): {fmt(s.P_unsafe, 3)} · PGA {fmt(s.PGA_representative_g)} g
+                PGA {fmt(s.PGA_representative_g, 3)} g · P(unsafe): {fmt(s.P_unsafe, 3)}
                 <br />
-                {s.facility_type} · {s.resolution_tier} · click for detail
+                {s.display_type || s.facility_type} · {s.resolution_tier} · click for detail
               </Tooltip>
             </CircleMarker>
           ))}
         </MapContainer>
 
         <div className="legend">
-          <div className="title">P(unsafe): 30-day P[PGA ≥ 0.2 g]</div>
+          <div className="title">Representative PGA · quantile bands</div>
           {bandCounts.map((b) => (
             <button
               key={b.label}
@@ -136,7 +145,7 @@ export default function Hazard({ manifest, sites, mode, modeKey, onSelectSite })
           ))}
           <div className="row">
             <span className="swatch" style={{ background: 'var(--hz-null)' }} />
-            no PSAHA value
+            no PGA value
           </div>
         </div>
       </div>

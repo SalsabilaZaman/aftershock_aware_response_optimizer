@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Polyline, Tooltip } from 'react-leaflet';
 import { fetchJson } from '../api.js';
 import { DISTANCE_BINS, distanceColor, STUDY_BOUNDS } from '../hazard.js';
-import { fmt, fmtInt, fmtCompact, fmtDistanceKm } from '../format.js';
+import { fmt, fmtInt, fmtCompact, fmtDistanceKm, displayFacilityType } from '../format.js';
 import { MetricPanel } from '../components/Metrics.jsx';
 import SortableTable from '../components/SortableTable.jsx';
 
@@ -35,12 +35,12 @@ export default function AllocationMap({ modeKey }) {
   const facilityById = useMemo(() => {
     const map = {};
     for (const t of solution?.tmc_selected ?? []) {
-      map[t.site_id] = { lat: t.latitude, lon: t.longitude, name: t.site_id, type: t.facility_type, cap: t.cap_j };
+      map[t.site_id] = { lat: t.latitude, lon: t.longitude, name: t.display_name || t.name || t.site_id, type: t.display_type || displayFacilityType(t.facility_type), cap: t.cap_j };
     }
     for (const h of hospitals ?? []) {
       map[`JH_${h.hospital_id}`] = {
         lat: h.latitude, lon: h.longitude, name: h.hospital_name,
-        type: 'hospital', cap: h.effective_capacity_postquake,
+        type: 'Hospital', cap: h.effective_capacity_postquake,
       };
     }
     return map;
@@ -73,7 +73,7 @@ export default function AllocationMap({ modeKey }) {
     const totalCas = filteredRows.reduce((s, r) => s + r.assigned_casualties, 0);
     const weightedAvg = filteredRows.reduce((s, r) => s + r.distance_km * r.assigned_casualties, 0) / totalCas;
     const maxRow = filteredRows.reduce((m, r) => (r.distance_km > m.distance_km ? r : m), filteredRows[0]);
-    const farCas = filteredRows.filter((r) => r.distance_km >= 30).reduce((s, r) => s + r.assigned_casualties, 0);
+    const farCas = filteredRows.filter((r) => r.distance_km > 30).reduce((s, r) => s + r.assigned_casualties, 0);
     return {
       weightedAvg,
       maxRow,
@@ -107,8 +107,8 @@ export default function AllocationMap({ modeKey }) {
   const columns = useMemo(() => [
     { key: 'demand_point_name', label: 'Demand point', align: 'left', value: (r) => r.demand_point_name },
     { key: 'fName', label: 'Facility', align: 'left', value: (r) => r.fName },
-    { key: 'fType', label: 'Type', align: 'left', value: (r) => r.fType,
-      render: (r) => <span className={`chip ${r.fType === 'hospital' ? 'safe' : 'neutral'}`}>{r.fType}</span> },
+      { key: 'fType', label: 'Type', align: 'left', value: (r) => r.fType,
+      render: (r) => <span className={`chip ${r.fType === 'Hospital' ? 'safe' : 'neutral'}`}>{r.fType}</span> },
     { key: 'distance_km', label: 'Distance (km)', align: 'right', value: (r) => fmt(r.distance_km, 2), sortValue: (r) => r.distance_km },
     { key: 'assigned_casualties', label: 'Assigned casualties', align: 'right', value: (r) => fmtInt(r.assigned_casualties), sortValue: (r) => r.assigned_casualties },
     { key: 'travel_burden_casualty_km', label: 'Travel burden (casualty-km)', align: 'right', value: (r) => fmt(r.travel_burden_casualty_km, 0), sortValue: (r) => r.travel_burden_casualty_km },
@@ -154,6 +154,7 @@ export default function AllocationMap({ modeKey }) {
             label: 'Casualty-weighted average distance',
           }}
           support={[
+            { label: 'Total expected casualties', value: fmtInt(stats.totalCas) },
             { label: 'Longest assignment', value: `${fmtDistanceKm(stats.maxRow.distance_km)} · ${stats.maxRow.demand_point_name} → ${stats.maxRow.fName}` },
             { label: 'Casualties travelling over 30 km', value: `${fmt(stats.farPct, 1)}%` },
             { label: 'Travel burden', value: fmtCompact(stats.totalTravelBurden, 'casualty-km') },
@@ -178,8 +179,8 @@ export default function AllocationMap({ modeKey }) {
           preferCanvas
         >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           {linesToDraw.map((r, i) => (
             <React.Fragment key={i}>

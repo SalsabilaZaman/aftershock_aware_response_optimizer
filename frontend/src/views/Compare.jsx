@@ -31,7 +31,7 @@ export default function Compare({ sites, onSelectSite }) {
       p_unsafe: siteById[r.site_id]?.P_unsafe ?? null,
       pga: siteById[r.site_id]?.PGA_representative_g ?? null,
       name: displaySiteName(siteById[r.site_id] ?? { site_id: r.site_id }),
-      type: siteById[r.site_id]?.facility_type ?? '',
+      type: siteById[r.site_id]?.display_type ?? siteById[r.site_id]?.facility_type ?? '',
     }));
   }, [status, siteById]);
 

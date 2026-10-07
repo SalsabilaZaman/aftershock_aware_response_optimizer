@@ -1,0 +1,13 @@
+{
+  "models": {
+    "risk_blind": "Risk-blind MILP",
+    "risk_aware": "Risk-aware MILP",
+    "paper_lp": "Scenario-wise LP",
+    "saa": "SAA"
+  },
+  "candidate_set_label": "Candidate set",
+  "candidate_sets": {
+    "all_candidates": "All candidates",
+    "topsis_120": "TOPSIS top 120"
+  }
+}

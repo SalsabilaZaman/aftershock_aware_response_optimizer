@@ -27,7 +27,7 @@ export default function SiteDetail({ siteId, onClose }) {
           <>
             <h2>{displaySiteName(site)}</h2>
             <p style={{ color: 'var(--ink-700)', margin: '0.1rem 0 0.4rem' }}>
-              {site.site_id} · {site.facility_type} ·{' '}
+              {site.display_type || site.facility_type} · Source ID {site.site_id} ·{' '}
               {site.resolution_tier === 'AOI04_highres' ? 'high-resolution damage imagery' : 'standard-resolution imagery'}
             </p>
             {st?.blind_pick_unsafe && (

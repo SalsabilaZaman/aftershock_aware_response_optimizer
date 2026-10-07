@@ -26,3 +26,6 @@ examples/outputs_psaha/
 *.zip
 
 docs/publishing.md
+# Local SQLite projection (rebuildable from examples/reference_results)
+data_etl/
+*.db

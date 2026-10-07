@@ -1,0 +1,43 @@
+{
+  "candidate_pool": "topsis_top_120",
+  "candidate_count": 120,
+  "available_candidate_count": 699,
+  "profile": "final",
+  "solver": "highs",
+  "seed": 20261002,
+  "replications": 10,
+  "training_scenarios_per_replication": 10,
+  "validation_draws_per_policy": 1000,
+  "time_limit_seconds": 300,
+  "relative_gap_target": 0.01,
+  "budgets": [
+    0,
+    10,
+    25,
+    50,
+    100,
+    120
+  ],
+  "wall_time_seconds": 9877.921,
+  "peak_memory_mb": null,
+  "detail_budget": 25,
+  "detail_replication": 1,
+  "detail_policy": "B25_rep1",
+  "detail_draw_id": 100000,
+  "detail_draw_index": 1,
+  "out_of_sample_monotonicity_warnings": [
+    {
+      "replication": 8,
+      "served_fraction_by_budget": [
+        0.3833006112308691,
+        0.7614970301323235,
+        0.787306096974929,
+        0.8703512745561734,
+        0.8644027478548655,
+        0.8857120772884646
+      ]
+    }
+  ],
+  "saved_policy_nesting_warnings": [],
+  "in_sample_aggregate_monotonicity_warning": false
+}

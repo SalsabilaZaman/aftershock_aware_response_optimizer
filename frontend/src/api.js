@@ -3,6 +3,7 @@ export async function fetchJson(path) {
   const [endpoint, query = ''] = path.split('?');
   const apiPath = endpoint.replace(/^\/api\/?/, '');
   let route = apiPath.startsWith('paper-lp/') ? apiPath.replace('paper-lp/', 'paper_lp/') : apiPath;
+  if (/^saa\/(all_candidates|topsis_120)(\/detail)?$/.test(apiPath)) route = apiPath.replace(/\/detail$/, '');
   if (apiPath === 'scenarios') route = 'scenarios';
   else if (apiPath === 'model-options') route = 'model-options';
   else if (apiPath === 'sites') route = 'sites';
@@ -15,6 +16,9 @@ export async function fetchJson(path) {
   const url = new URL(`${import.meta.env.BASE_URL}data/api/${route}.json`, window.location.href);
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Published result unavailable (${res.status})`);
+  if (!res.headers.get('content-type')?.includes('application/json')) {
+    throw new Error(`Published result ${route}.json is missing or not JSON; regenerate it from the reference CSV bundle`);
+  }
   const value = await res.json();
 
   if (apiPath.startsWith('sites/')) {

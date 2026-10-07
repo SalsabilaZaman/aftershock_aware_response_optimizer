@@ -41,20 +41,34 @@ export function fmtCompact(v, unit) {
   return unit ? `${short} ${unit}` : short;
 }
 
-// 43% of candidate sites (344/804) have no OSM `name` tag and were exported
-// with a generated Site_<n> placeholder. Rather than show that name-shaped
-// but fabricated-looking string, fall back to the real site ID plainly —
-// it's already how every other unnamed/ambiguous reference in this app
-// (facility IDs in tables, tooltips) is shown, so it reads as "this is the
-// identifier" rather than a synthetic name.
 const PLACEHOLDER_NAME = /^Site_\d+$/;
 
-export function displaySiteName(site) {
+const TYPE_LABELS = {
+  social_facility: 'Social facility', community_centre: 'Community centre',
+  school: 'School', hospital: 'Hospital', sports_centre: 'Sports centre',
+  place_of_worship: 'Place of worship', stadium: 'Stadium', college: 'College',
+  university: 'University', clinic: 'Clinic', shelter: 'Shelter',
+};
+
+export function displayFacilityType(type) {
+  if (!type) return 'Facility';
+  return TYPE_LABELS[type] ?? String(type).replaceAll('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export function displaySiteName(site, demandPoints = []) {
+  if (site?.display_name) return site.display_name;
   const name = site?.name;
-  if (!name || PLACEHOLDER_NAME.test(name)) {
-    return site?.site_id ?? '?';
+  if (name && !PLACEHOLDER_NAME.test(name)) return name;
+  if (site?.site_id && Number.isFinite(Number(site.latitude)) && Number.isFinite(Number(site.longitude)) && demandPoints.length) {
+    const nearest = demandPoints.reduce((best, demand) => {
+      const dLat = Number(demand.latitude) - Number(site.latitude);
+      const dLon = Number(demand.longitude) - Number(site.longitude);
+      const distance = dLat * dLat + dLon * dLon;
+      return !best || distance < best.distance ? { name: demand.name, distance } : best;
+    }, null);
+    if (nearest?.name) return `${displayFacilityType(site.facility_type)} near ${nearest.name} (${site.site_id})`;
   }
-  return name;
+  return site?.site_id ?? '?';
 }
 
 export function isPlaceholderName(name) {

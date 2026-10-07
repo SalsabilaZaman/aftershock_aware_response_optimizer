@@ -14,7 +14,23 @@ export default function AboutRun({ manifest, onClose }) {
     <div className="detail-overlay" onClick={onClose}>
       <aside className="detail-drawer" onClick={(e) => e.stopPropagation()}>
         <button className="close" onClick={onClose} aria-label="Close">×</button>
-        <h2>About this run</h2>
+        <h2>How to read this</h2>
+
+        <h3>What the models decide</h3>
+        <ul className="how-to-list">
+          <li><b>{manifest?.model_labels?.models?.risk_blind ?? 'Risk-blind MILP'}:</b> choose TMC openings and allocate casualties without the PGA screen.</li>
+          <li><b>{manifest?.model_labels?.models?.risk_aware ?? 'Risk-aware MILP'}:</b> optimize after excluding candidate sites above the PGA threshold.</li>
+          <li><b>{manifest?.model_labels?.models?.paper_lp ?? 'Scenario-wise LP'}:</b> solve routing and staffing separately for each scenario; it has no shared site-opening decision.</li>
+          <li><b>{manifest?.model_labels?.models?.saa ?? 'SAA'}:</b> choose a shared TMC policy under a site budget, then evaluate sampled scenarios.</li>
+        </ul>
+
+        <h3>Objective units</h3>
+        <dl className="research-objectives">
+          <dt>Z1</dt><dd>Unmet casualties, with T1 as the most severe triage class.</dd>
+          <dt>Z2</dt><dd>Casualty travel burden, measured in casualty-kilometres.</dd>
+          <dt>Z3</dt><dd>Additional staffing. Values are continuous staff equivalents; summing across periods gives staff-periods.</dd>
+        </dl>
+        <p className="muted">SAA reports four model periods within the first 72 hours. The configuration defines period indices, not a separate clock-time duration for each period.</p>
 
         <h3>Run configuration</h3>
         <table className="kv">

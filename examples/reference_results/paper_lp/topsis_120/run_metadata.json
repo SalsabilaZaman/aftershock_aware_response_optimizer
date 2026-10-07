@@ -1,0 +1,13 @@
+{
+  "model": "paper_lp",
+  "candidate_pool": "topsis",
+  "candidate_count": 120,
+  "available_candidate_count": 699,
+  "scenario_count": 20,
+  "solver": "HiGHS",
+  "wall_time_seconds": 26.563,
+  "peak_memory_mb": null,
+  "optimality_gap": null,
+  "optimality_gap_note": "Not applicable to continuous LP",
+  "distance_limit_t1_km": 12.0
+}

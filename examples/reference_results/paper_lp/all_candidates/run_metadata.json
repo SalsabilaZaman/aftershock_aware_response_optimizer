@@ -1,0 +1,13 @@
+{
+  "model": "paper_lp",
+  "candidate_pool": "all",
+  "candidate_count": 699,
+  "available_candidate_count": 699,
+  "scenario_count": 20,
+  "solver": "HiGHS",
+  "wall_time_seconds": 563.219,
+  "peak_memory_mb": null,
+  "optimality_gap": null,
+  "optimality_gap_note": "Not applicable to continuous LP",
+  "distance_limit_t1_km": 12.0
+}
