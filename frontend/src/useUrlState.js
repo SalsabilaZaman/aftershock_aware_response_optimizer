@@ -18,6 +18,8 @@ const DEFAULT_MODE = 'aware';
 
 function readParams() {
   const params = new URLSearchParams(window.location.search);
+  const hasDashboardState = ['view', 'mode', 'model', 'candidate_set', 'detail', 'run'].some((key) => params.has(key));
+  const screen = params.get('screen') === 'dashboard' || (!params.has('screen') && hasDashboardState) ? 'dashboard' : 'welcome';
   const view = VIEWS.includes(params.get('view')) ? params.get('view') : 'briefing';
   let mode = MODES.includes(params.get('mode')) ? params.get('mode') : DEFAULT_MODE;
   const rawModel = params.get('model');
@@ -29,7 +31,7 @@ function readParams() {
   if (model === 'risk_aware') mode = 'aware';
   const detail = params.get('detail') === 'research' ? 'research' : 'planner';
   const run = params.get('run') || '';
-  return { view, mode, model, candidateSet, detail, run };
+  return { view, mode, model, candidateSet, detail, run, screen };
 }
 
 function writeParams(next) {
@@ -39,6 +41,7 @@ function writeParams(next) {
   params.set('model', next.model);
   params.set('candidate_set', next.candidateSet);
   params.set('detail', next.detail);
+  params.set('screen', next.screen);
   if (next.run) params.set('run', next.run);
   else params.delete('run');
   const url = `${window.location.pathname}?${params.toString()}`;
@@ -61,6 +64,7 @@ export function useUrlState() {
   const setCandidateSet = useCallback((candidateSet) => setState((s) => ({ ...s, candidateSet })), []);
   const setDetail = useCallback((detail) => setState((s) => ({ ...s, detail })), []);
   const setRun = useCallback((run) => setState((s) => ({ ...s, run })), []);
+  const setScreen = useCallback((screen) => setState((s) => ({ ...s, screen })), []);
 
   return {
     view: state.view,
@@ -76,5 +80,7 @@ export function useUrlState() {
     setDetail,
     run: state.run,
     setRun,
+    screen: state.screen,
+    setScreen,
   };
 }

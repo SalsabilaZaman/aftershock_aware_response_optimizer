@@ -162,6 +162,14 @@ body {
 .assumptions-panel h4 { margin-bottom: var(--space-2); }
 
 .run-workspace { margin: 0 0 var(--space-4); }
+.welcome-page { width: min(1120px, calc(100% - 2rem)); margin: 0 auto; padding-top: var(--space-5); }
+.welcome-header { padding: var(--space-4) 0; border-bottom: 1px solid var(--ink-200); }
+.welcome-header .brand h1 { margin: 0 0 .1rem; font-size: 1.2rem; font-weight: 600; }
+.welcome-header .brand p.subtitle { color: var(--ink-700); margin: 0; font-size: .9rem; max-width: 60ch; }
+.welcome-hero { max-width: 760px; padding: clamp(2rem, 6vw, 4rem) 0 var(--space-4); }
+.welcome-hero .eyebrow { margin: 0 0 .55rem; color: var(--accent); font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.welcome-hero h2 { margin: 0 0 .65rem; font-size: clamp(1.8rem, 4vw, 2.7rem); line-height: 1.1; }
+.welcome-hero > p:last-child { margin: 0; color: var(--ink-700); font-size: 1.02rem; line-height: 1.6; }
 .run-workspace-heading, .run-upload-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
 .run-workspace-heading h2 { margin: 0 0 var(--space-1); font-size: 1.05rem; }
 .run-workspace-heading p, .run-upload-row p { margin: 0.2rem 0 0; }

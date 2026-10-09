@@ -41,7 +41,7 @@ export default function App() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [modelOptions, setModelOptions] = useState({ choices: [], candidate_sets: {}, candidate_set_label: 'Candidate set' });
   const [scenarioId, setScenarioId] = useState('all');
-  const { view, setView, model, setModel, candidateSet, setCandidateSet, detail, setDetail, run, setRun } = useUrlState();
+  const { view, setView, model, setModel, candidateSet, setCandidateSet, detail, setDetail, run, setRun, screen, setScreen } = useUrlState();
   setActiveRunId(run);
 
   const exportSelectedRun = async () => {
@@ -110,12 +110,32 @@ export default function App() {
   const selectedProfileAvailable = isCandidateProfileModel
     ? selectedModelOption?.profiles?.[candidateSet]?.available : selectedModelOption?.available;
 
+  if (screen === 'welcome') {
+    return (
+      <div className="app welcome-page">
+        <header className="welcome-header"><Brand /></header>
+        <section className="welcome-hero">
+          <p className="eyebrow">Aftershock Aware Response Optimizer</p>
+          <h2>Plan an earthquake casualty response</h2>
+          <p>Explore the saved reference analysis or run the AARO pipeline with a prepared dataset bundle.</p>
+        </section>
+        <RunWorkspace
+          runId={run}
+          onSelectRun={setRun}
+          onEnterDashboard={() => setScreen('dashboard')}
+          onRunComplete={() => { reloadData(); setScreen('dashboard'); }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <header className="app-header">
         <div className="header-top">
           <Brand />
           <div className="header-controls">
+            <button className="btn-ghost" onClick={() => setScreen('welcome')}>Home · change run</button>
             {manifest?.generated_utc && (
               <span className="badge" title={`Computed ${manifest.generated_utc}`}>
                 {manifest.data_source?.kind === 'job' ? 'Saved run' : 'Reference results'} · {fmtShortDate(manifest.generated_utc)}
@@ -153,8 +173,6 @@ export default function App() {
           </div>}
         </div>}
       </header>
-
-      <RunWorkspace runId={run} onSelectRun={setRun} onRunComplete={reloadData} />
 
       {error && (
         <div className="notice">

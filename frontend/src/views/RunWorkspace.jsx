@@ -27,7 +27,7 @@ function displayError(body, fallback) {
   return detail?.message || fallback;
 }
 
-export default function RunWorkspace({ runId, onSelectRun, onRunComplete }) {
+export default function RunWorkspace({ runId, onSelectRun, onEnterDashboard, onRunComplete }) {
   const [runs, setRuns] = useState([]);
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState(null);
@@ -137,6 +137,9 @@ export default function RunWorkspace({ runId, onSelectRun, onRunComplete }) {
           {runs.map((item) => <option value={item.run_id} key={item.run_id}>{item.name} · {item.state}</option>)}
         </select>
       </label>
+      <button className="btn-primary" disabled={busy} onClick={onEnterDashboard}>
+        {runId ? 'Open selected run' : 'Enter AARO'}
+      </button>
     </div>
 
     <div className="run-upload-row">
