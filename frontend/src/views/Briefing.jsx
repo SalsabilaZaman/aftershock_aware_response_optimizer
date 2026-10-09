@@ -105,10 +105,10 @@ export default function Briefing({ model, candidateSet = 'all_candidates', manif
   const candidateLabel = manifest?.model_labels?.candidate_sets?.[candidateSet] ?? candidateSet;
   const titles = { risk_blind: manifest?.model_labels?.models?.risk_blind ?? 'Risk-blind MILP', risk_aware: manifest?.model_labels?.models?.risk_aware ?? 'Risk-aware MILP', paper_lp: `${manifest?.model_labels?.models?.paper_lp ?? 'Scenario-wise LP'} · ${candidateLabel}`, saa: `SAA · ${candidateLabel}` };
   const columns = [
-    ['Plan', null], ['Sites selected', 'sites'], ['Selected sites above 0.2 g', 'unsafe'], ['Average distance', 'avg'], ['Casualties travelling over 30 km', 'over30'], ['Untreated T1', 't1'],
+    ['Plan', null], ['Sites selected', 'sites'], ['Selected sites above 0.2 g', 'unsafe'], ['Average distance', 'avg'], ['Casualties travelling over 30 km', 'over30'],
   ];
   const planRows = [['Risk-blind MILP', comparison.blind], ['Risk-aware MILP', comparison.aware], ['Scenario-wise LP · sites used', comparison.paper], [`SAA · ${comparison.saaBudget}-site budget`, comparison.saa]];
-  const num = (key, value, plan) => value == null ? (key === 't1' && plan !== 'SAA' ? 'Not modeled' : 'Unavailable') : key === 'avg' ? `${fmt(value, 1)} km` : key === 'over30' ? fmtPct(value) : fmtInt(value);
+  const num = (key, value) => value == null ? 'Unavailable' : key === 'avg' ? `${fmt(value, 1)} km` : key === 'over30' ? fmtPct(value) : fmtInt(value);
   const isExpected = model === 'saa' || model === 'paper_lp';
   const statsSource = manifest?.scenarios?.[0]?.name ?? 'Selected validated run';
   const countDifference = model === 'risk_blind' || model === 'risk_aware'
@@ -117,8 +117,8 @@ export default function Briefing({ model, candidateSet = 'all_candidates', manif
       : 'Scenario-wise LP uses scenario-specific demand (about 174,000 expected casualties) and has no first-stage site-opening decision; deterministic MILP allocates the fixed 117,398-casualty projection.';
 
   return <section>
-    <div className="panel callout"><h3>Compare plans</h3><p className="muted">Scenario-wise LP chooses routes independently in each scenario and has no shared site budget. “Sites used” is the union of sites receiving flow across scenarios. SAA is shown at its {comparison.saaBudget ?? 'available'}-site budget; its service and unmet figures are out-of-sample expectations.</p>
-      <div className="table-scroll"><table className="data"><thead><tr>{columns.map(([label]) => <th key={label}>{label}</th>)}</tr></thead><tbody>{planRows.map(([name, row]) => <tr key={name}><th scope="row">{name}</th>{columns.slice(1).map(([, key]) => <td key={key}>{num(key, row[key], name.startsWith('SAA') ? 'SAA' : 'MILP')}</td>)}</tr>)}</tbody></table></div>
+    <div className="panel callout"><h3>Compare plans</h3>
+      <div className="table-scroll"><table className="data"><thead><tr>{columns.map(([label]) => <th key={label}>{label}</th>)}</tr></thead><tbody>{planRows.map(([name, row]) => <tr key={name}><th scope="row">{name}</th>{columns.slice(1).map(([, key]) => <td key={key}>{num(key, row[key])}</td>)}</tr>)}</tbody></table></div>
       <p className="muted">T1 means critical-priority casualties. The scenario-wise LP models T1 routing; the deterministic MILPs do not separate casualties by triage level.</p>
     </div>
     <div className="panel callout"><h3>Plan summary · {titles[model]}</h3><p className="muted">{stats.detail}</p></div>
