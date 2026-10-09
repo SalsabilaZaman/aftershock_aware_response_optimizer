@@ -4,8 +4,8 @@ import { fmt, fmtInt } from '../format.js';
 import assumptions from '../../../pipelines/model_assumptions.json';
 
 function AssumptionTable({ items }) {
-  return <div className="table-scroll"><table className="data assumption-table"><thead><tr><th>Parameter</th><th>Value</th><th>Meaning</th><th>Source</th></tr></thead>
-    <tbody>{items.map((item) => <tr key={item.name}><td>{item.name}</td><td><b>{item.value}</b>{item.unit && item.unit !== '—' ? <div className="muted">{item.unit}</div> : null}</td><td>{item.detail}</td><td><code>{item.source}</code></td></tr>)}</tbody>
+  return <div className="table-scroll"><table className="data assumption-table"><thead><tr><th>Parameter</th><th>Value</th><th>Meaning</th></tr></thead>
+    <tbody>{items.map((item) => <tr key={item.name}><td>{item.name}</td><td>{item.value}{item.unit && item.unit !== '—' ? <div className="muted">{item.unit}</div> : null}</td><td>{item.detail}</td></tr>)}</tbody>
   </table></div>;
 }
 
@@ -40,10 +40,10 @@ export default function ResearchLab({ model, candidateSet = 'all_candidates', de
         <h4>{group.group}</h4><AssumptionTable items={group.items} />
       </div>)}
       <h3 style={{ marginTop: 'var(--space-5)' }}>Assumptions by model</h3>
-      {assumptions.models.map((entry) => <details className="assumption-model" key={entry.id} open={entry.id === model}>
-        <summary><b>{entry.name}</b><span className="muted"> · {entry.summary}</span></summary>
+      {assumptions.models.filter((entry) => entry.id === model).map((entry) => <div className="assumption-model" key={entry.id}>
+        <h4>{entry.name}</h4><p className="muted">{entry.summary}</p>
         <AssumptionTable items={entry.items} />
-      </details>)}
+      </div>)}
     </div>
   </section>;
 }
