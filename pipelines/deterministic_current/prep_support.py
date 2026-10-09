@@ -129,9 +129,17 @@ def add_demand_coordinates(sub_districts):
         print(f"  Cache entries: {len(cache)}")
 
     rows = sub_districts.copy()
-    coords = [geocode_district(row["name"], cache) for _, row in rows.iterrows()]
-    rows["latitude"] = [lat for lat, _ in coords]
-    rows["longitude"] = [lon for _, lon in coords]
+    if {"latitude", "longitude"}.issubset(rows.columns):
+        rows["latitude"] = pd.to_numeric(rows["latitude"], errors="coerce")
+        rows["longitude"] = pd.to_numeric(rows["longitude"], errors="coerce")
+        missing = rows["latitude"].isna() | rows["longitude"].isna()
+        for idx in rows.index[missing]:
+            lat, lon = geocode_district(rows.at[idx, "name"], cache)
+            rows.at[idx, "latitude"], rows.at[idx, "longitude"] = lat, lon
+    else:
+        coords = [geocode_district(row["name"], cache) for _, row in rows.iterrows()]
+        rows["latitude"] = [lat for lat, _ in coords]
+        rows["longitude"] = [lon for _, lon in coords]
     os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
     with open(CACHE_FILE, "w", encoding="utf-8") as f:
         json.dump(cache, f, indent=2)

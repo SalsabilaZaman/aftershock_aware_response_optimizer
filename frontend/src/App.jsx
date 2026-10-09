@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchJson } from './api.js';
+import { fetchJson, setActiveRunId } from './api.js';
 import { fmtShortDate } from './format.js';
 import { useUrlState, VIEWS, MODELS } from './useUrlState.js';
 import Hazard from './views/Hazard.jsx';
@@ -14,6 +14,7 @@ import ResearchLab from './views/ResearchLab.jsx';
 import ProfileComparison from './views/ProfileComparison.jsx';
 import SAAMedicalResponse from './views/SAAMedicalResponse.jsx';
 import StochasticSiting from './views/StochasticSiting.jsx';
+import RunWorkspace from './views/RunWorkspace.jsx';
 
 const TAB_LABELS = {
   briefing: 'Briefing', hazard: 'Hazard & site ranking', siting: 'Siting plan',
@@ -40,7 +41,8 @@ export default function App() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [modelOptions, setModelOptions] = useState({ choices: [], candidate_sets: {}, candidate_set_label: 'Candidate set' });
   const [scenarioId, setScenarioId] = useState('all');
-  const { view, setView, model, setModel, candidateSet, setCandidateSet, detail, setDetail } = useUrlState();
+  const { view, setView, model, setModel, candidateSet, setCandidateSet, detail, setDetail, run, setRun } = useUrlState();
+  setActiveRunId(run);
 
   const exportSelectedRun = async () => {
     const profile = candidateSet;
@@ -88,9 +90,16 @@ export default function App() {
   };
 
   useEffect(() => {
-    reloadData();
+    if (!run) {
+      reloadData();
+    } else {
+      setManifest(null);
+      setSites(null);
+      setModelOptions({ choices: [], candidate_sets: {}, candidate_set_label: 'Candidate set' });
+      setError(null);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [run]);
 
   const openDetail = (siteId) => setDetailSiteId(siteId);
   const selectedModelOption = modelOptions.choices.find((item) => item.id === model);
@@ -109,7 +118,7 @@ export default function App() {
           <div className="header-controls">
             {manifest?.generated_utc && (
               <span className="badge" title={`Computed ${manifest.generated_utc}`}>
-                Reference results · {fmtShortDate(manifest.generated_utc)}
+                {manifest.data_source?.kind === 'job' ? 'Saved run' : 'Reference results'} · {fmtShortDate(manifest.generated_utc)}
               </span>
             )}
             <button className="link-btn" onClick={() => setAboutOpen(true)}>How to read this</button>
@@ -145,12 +154,15 @@ export default function App() {
         </div>}
       </header>
 
+      <RunWorkspace runId={run} onSelectRun={setRun} onRunComplete={reloadData} />
+
       {error && (
         <div className="notice">
-          Published result data could not be loaded: {error}. Please try the site again later.
+          {run ? 'Selected run data' : 'Published result data'} could not be loaded: {error}. Please try again later.
         </div>
       )}
 
+      <main key={run || 'reference'}>
       {view === 'briefing' && <Briefing model={model} candidateSet={candidateSet} manifest={manifest} detail={detail} />}
       {view === 'hazard' && <Hazard manifest={manifest} sites={sites} onSelectSite={openDetail} />}
       {view === 'siting' && (isCandidateProfileModel
@@ -173,6 +185,7 @@ export default function App() {
         <SiteDetail siteId={detailSiteId} onClose={() => setDetailSiteId(null)} />
       )}
       {aboutOpen && <AboutRun manifest={manifest} onClose={() => setAboutOpen(false)} />}
+      </main>
     </div>
   );
 }

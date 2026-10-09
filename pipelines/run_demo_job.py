@@ -42,6 +42,7 @@ STAGES = (
        for mode in MODES for step in ("step1_prepare_data.py", "step2_solve_model.py")]
     + [("allocation_map", "make_allocation_map_simple.py", DET_DIR, "make_allocation_map_simple.py")]
     + [("dashboard_export", "run_extraction.py", EXTRACTION_DIR, "run_extraction.py")]
+    + [("api_export", "build_pages_data.py", CODE_ROOT / "scripts", "build_pages_data.py")]
 )
 
 
@@ -69,6 +70,9 @@ def run(root: Path):
         args = [sys.executable, str(script_dir / script_file)]
         if stage_id == "dashboard_export":
             args += ["--datasets", "dashboard_export"]
+        elif stage_id == "api_export":
+            args += ["--source", str(root / "dashboard_data"),
+                     "--destination", str(root / "api_data")]
 
         entry = {"stage": stage_id, "script": script_name, "started_utc": _now(),
                   "status": "running"}
@@ -112,7 +116,7 @@ def main():
     if status["state"] != "done":
         raise SystemExit(f"job failed at stage {status.get('failed_stage')}; "
                           f"see {root / 'status.json'}")
-    print(f"Job complete. Results in {root / 'dashboard_data'}.")
+    print(f"Job complete. Results in {root / 'dashboard_data'} and {root / 'api_data'}.")
 
 
 if __name__ == "__main__":

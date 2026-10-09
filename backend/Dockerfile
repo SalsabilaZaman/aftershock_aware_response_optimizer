@@ -1,0 +1,13 @@
+FROM python:3.11-slim
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends coinor-cbc \
+    && rm -rf /var/lib/apt/lists/*
+COPY requirements.txt ./requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements.txt
+COPY backend/requirements.txt ./backend-requirements.txt
+RUN python -m pip install --no-cache-dir -r backend-requirements.txt
+COPY . .
+ENV AARO_RUNS_DIR=/var/lib/aaro/runs
+VOLUME ["/var/lib/aaro"]
+EXPOSE 8000
+CMD ["uvicorn", "backend.app:app", "--host", "0.0.0.0", "--port", "8000"]

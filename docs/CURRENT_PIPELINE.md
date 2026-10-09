@@ -116,6 +116,8 @@ For the published dashboard, copy/review the intended reference outputs under `e
 
 The primary research repo `earthquake_response` exports its own CSV handoff under `dashboard_data/`; this showcase does not read that directory directly. When refreshing this showcase from a new primary run, first reconcile its CSVs with the expected filenames and model/profile layout in `examples/reference_results/`, then regenerate the static JSON and review the model availability and metric counts before publishing.
 
+The AARO frontend's saved-run/upload interface and its run-scoped FastAPI service are documented in [dataset runs](dataset-runs.md). Uploaded bundles start from prepared CSVs and run the PSAHA + both deterministic modes + dashboard export chain inside isolated job directories.
+
 ## Current reference-bundle coverage
 
 The bundled case manifest reports 804 site records, 15 hospitals, 369 aftershocks, and 11 demand points. Of the site records, 803 have representative PGA values. The current model availability is recorded in `frontend/public/data/api/model-options.json` and is derived from the reference files by the exporter.

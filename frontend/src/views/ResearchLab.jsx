@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { fetchJson } from '../api.js';
 import { fmt, fmtInt } from '../format.js';
+import assumptions from '../../../pipelines/model_assumptions.json';
+
+function AssumptionTable({ items }) {
+  return <div className="table-scroll"><table className="data assumption-table"><thead><tr><th>Parameter</th><th>Value</th><th>Meaning</th><th>Source</th></tr></thead>
+    <tbody>{items.map((item) => <tr key={item.name}><td>{item.name}</td><td><b>{item.value}</b>{item.unit && item.unit !== '—' ? <div className="muted">{item.unit}</div> : null}</td><td>{item.detail}</td><td><code>{item.source}</code></td></tr>)}</tbody>
+  </table></div>;
+}
 
 export default function ResearchLab({ model, candidateSet = 'all_candidates', detail, manifest }) {
   const files = manifest?.files ?? {};
@@ -26,6 +33,17 @@ export default function ResearchLab({ model, candidateSet = 'all_candidates', de
             : <p className="muted">The selected model export does not include objective values or solver/run metadata.</p>}
         <h4>Export inventory</h4><div className="table-scroll"><table className="data"><thead><tr><th>File</th><th>Status</th><th>Rows</th><th>Note</th></tr></thead><tbody>{Object.entries(files).map(([name, v]) => <tr key={name}><td>{name}</td><td>{v.status}</td><td>{v.rows ?? '—'}</td><td>{v.note ?? '—'}</td></tr>)}</tbody></table></div><details><summary>Scenario and validation provenance</summary><pre>{JSON.stringify({ scenarios: manifest?.scenarios, validation: manifest?.validation }, null, 2)}</pre></details></>}
     </div>
-    <div className="notice info" style={{ marginTop: 'var(--space-4)' }}>Facility occupancy, period capacity loads and health-state transitions are not included in this published reference snapshot.</div>
+    <div className="panel assumptions-panel" style={{ marginTop: 'var(--space-4)' }}>
+      <h3>{assumptions.title}</h3>
+      <p className="muted">Values below describe the implemented model settings. “Not modeled” means the model does not include that mechanism.</p>
+      {assumptions.shared.map((group) => <div key={group.group}>
+        <h4>{group.group}</h4><AssumptionTable items={group.items} />
+      </div>)}
+      <h3 style={{ marginTop: 'var(--space-5)' }}>Assumptions by model</h3>
+      {assumptions.models.map((entry) => <details className="assumption-model" key={entry.id} open={entry.id === model}>
+        <summary><b>{entry.name}</b><span className="muted"> · {entry.summary}</span></summary>
+        <AssumptionTable items={entry.items} />
+      </details>)}
+    </div>
   </section>;
 }

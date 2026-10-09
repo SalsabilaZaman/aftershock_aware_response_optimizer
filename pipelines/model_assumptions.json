@@ -1,0 +1,67 @@
+{
+  "title": "Model assumptions and parameters",
+  "shared": [
+    {
+      "group": "PSAHA hazard calculation",
+      "items": [
+        {"name":"Forecast window","value":"30 days after the 2023-02-06 mainshock","unit":"days","detail":"The modified Omori law estimates the expected aftershock count over days 0–30.","source":"pipelines/psaha/step1_omori.py; pipelines/extraction/config.yaml"},
+        {"name":"Aftershock rate","value":"Modified Omori law; MLE grid c=0.01–1.00 by 0.01 and p=0.80–1.60 by 0.01","unit":"K/(t+c)^p","detail":"The catalog time sequence is modeled as a point process; K is estimated in closed form for each c,p pair.","source":"pipelines/psaha/step1_omori.py"},
+        {"name":"Magnitude frequencies","value":"Gutenberg–Richter fit; 0.2 magnitude bin width","unit":"magnitude","detail":"Normalized 10^(-bM) weights are used to weight candidate magnitude bins.","source":"pipelines/psaha/step2_gutenberg_richter.py"},
+        {"name":"Ground motion","value":"BSSA14 PGA; observed epicentral distance used as a point-source proxy for Rjb","unit":"PGA in g","detail":"Uses site Vs30 and the published BSSA14 median and heteroscedastic sigma; no finite-fault geometry is available for these aftershocks.","source":"pipelines/psaha/step3_gmpe.py"},
+        {"name":"Unsafe threshold","value":"0.2","unit":"g","detail":"P(unsafe) is the Poisson exceedance probability over the 30-day window. The same threshold screens TMCs in the risk-aware deterministic model.","source":"pipelines/psaha/step4_hazard_probability.py; pipelines/deterministic_current/settings.py"}
+      ]
+    },
+    {
+      "group": "Capacity and network preparation",
+      "items": [
+        {"name":"TMC capacity","value":"clip(site_area_m2 / 30, 30, 2,000)","unit":"people per site","detail":"Uses outdoor site/campus polygon area at 30 m² per person, with minimum and maximum capacity bounds. Type-based defaults are a fallback when area is missing.","source":"pipelines/deterministic_current/settings.py; pipelines/deterministic_current/prep_support.py"},
+        {"name":"Fallback TMC capacities","value":"school 200; university 300; sports centre 250; stadium 500; social facility 100","unit":"people per site","detail":"Applied only when site area is unavailable.","source":"pipelines/deterministic_current/settings.py"},
+        {"name":"Existing hospital capacity","value":"Curated bed_capacity_total; effective_capacity_postquake when present","unit":"beds","detail":"Closed hospitals with zero effective post-quake capacity are excluded from usable capacity.","source":"pipelines/deterministic_current/prep_support.py; data_processed/hospitals/hospital_data.csv"},
+        {"name":"Hospital-to-site matching","value":"Nearest OSM hospital site within 25 km","unit":"km","detail":"Used to match curated hospitals to OSM hospital features and exclude duplicate TMC candidates.","source":"pipelines/deterministic_current/settings.py; pipelines/deterministic_current/prep_support.py"}
+      ]
+    }
+  ],
+  "models": [
+    {
+      "id":"risk_blind","name":"Risk-blind deterministic MILP","summary":"Facility location and casualty allocation without aftershock hazard screening.",
+      "items":[
+        {"name":"Demand","value":"Casualty scenario 1; all periods are aggregated","unit":"casualties","detail":"Every demand point must be fully allocated to a hospital or selected TMC.","source":"pipelines/deterministic_current/settings.py; pipelines/deterministic_current/prep_support.py"},
+        {"name":"Objective","value":"distance_km × assigned casualties + 1,000 per opened TMC","unit":"casualty-km","detail":"The opening penalty is a judgment-chosen tradeoff, not a monetary facility cost. C_TRANS=1 defines the objective units.","source":"pipelines/deterministic_current/settings.py; pipelines/deterministic_current/solver_support.py"},
+        {"name":"Candidate eligibility","value":"All prepared TMC candidates","unit":"sites","detail":"No PGA safety exclusion is applied.","source":"pipelines/deterministic_current/settings.py; pipelines/deterministic_current/prep_support.py"},
+        {"name":"Health transitions and staffing productivity","value":"Not modeled","unit":"—","detail":"This deterministic model has no triage, health-state transitions, staff variables, or period-level treatment capacity.","source":"pipelines/deterministic_current/solver_support.py"}
+      ]
+    },
+    {
+      "id":"risk_aware","name":"Risk-aware deterministic MILP","summary":"Same deterministic facility-location model, with an aftershock PGA eligibility screen.",
+      "items":[
+        {"name":"Demand and objective","value":"Same as risk-blind deterministic MILP","unit":"casualties; casualty-km","detail":"Scenario 1 demand is aggregated; travel burden is minimized with a 1,000 casualty-km opening penalty per TMC.","source":"pipelines/deterministic_current/settings.py; pipelines/deterministic_current/solver_support.py"},
+        {"name":"Candidate eligibility","value":"Exclude candidates with representative PGA > 0.2","unit":"g","detail":"The representative value is the maximum median PGA for significant observed aftershocks. This is a deterministic screen, separate from P(unsafe).","source":"pipelines/deterministic_current/prep_support.py; pipelines/deterministic_current/settings.py"},
+        {"name":"Health transitions and staffing productivity","value":"Not modeled","unit":"—","detail":"This deterministic model has no triage, health-state transitions, staff variables, or period-level treatment capacity.","source":"pipelines/deterministic_current/solver_support.py"}
+      ]
+    },
+    {
+      "id":"paper_lp","name":"Scenario-wise Paper LP","summary":"Solves one continuous medical response LP for each of 20 casualty scenarios.",
+      "items":[
+        {"name":"Scenario weights","value":"20 source scenarios; uses scenario_prob values supplied in the casualty file (must sum to 1)","unit":"scenarios","detail":"Results are reported per scenario and probability-weighted for summaries.","source":"pipelines/stochastic_medical/scenario_lp_support.py"},
+        {"name":"Optimization priorities","value":"Lexicographic: minimize unmet casualties (Z1), then travel (Z2), then additional staff (Z3)","unit":"priority order","detail":"There is no first-stage TMC opening decision; positive-flow candidate sites are not explicit openings.","source":"pipelines/stochastic_medical/scenario_lp_support.py; pipelines/stochastic_medical/run_scenario_lp.py"},
+        {"name":"T1 routing limit","value":"12","unit":"km","detail":"T1 casualties route only to existing hospitals within the effective distance limit; TMCs do not receive T1 casualties.","source":"pipelines/stochastic_medical/settings.py; pipelines/stochastic_medical/scenario_lp_support.py"},
+        {"name":"Health-state transitions","value":"Treated and untreated triage transition matrices","unit":"probability per period","detail":"Treated: T1→D/T1/T2 = 0.15/0.60/0.25; T2→D/T2/T3 = 0.10/0.20/0.70; T3→D/T3/DC = 0.05/0.15/0.80. Untreated: T1→D/T1 = 0.60/0.40; T2→T1/T2 = 0.55/0.45; T3→T2/T3 = 0.25/0.75.","source":"pipelines/stochastic_medical/settings.py; pipelines/stochastic_medical/scenario_lp_support.py"},
+        {"name":"Staff productivity","value":"4 patients per doctor and 8 per nurse","unit":"patients per 12-hour period","detail":"Additional doctors and nurses are decision variables; productivity values are explicitly documented planning assumptions.","source":"pipelines/stochastic_medical/settings.py; pipelines/stochastic_medical/scenario_lp_support.py"},
+        {"name":"Existing and additional staff","value":"Existing hospital doctors/nurses are available at their input counts; extra staff is optimized","unit":"staff per facility and period","detail":"TMCs begin with no base staff in the model. Extra doctors and nurses are continuous decision variables.","source":"pipelines/stochastic_medical/scenario_lp_support.py; pipelines/stochastic_medical/prep_support.py"},
+        {"name":"Capacity under damage","value":"Hospital capacity loss = local damage × 0.50 × scenario severity; TMC outpatient capacity = 3 × TMC bed capacity","unit":"fraction; multiplier","detail":"TMC bed capacity uses the shared area-derived rule. TMC capacity is not reduced by the hospital damage factor.","source":"pipelines/stochastic_medical/settings.py; pipelines/stochastic_medical/scenario_lp_support.py"}
+      ]
+    },
+    {
+      "id":"saa","name":"Two-stage SAA","summary":"Chooses a TMC policy under site-count budgets, then evaluates allocation and staffing recourse on sampled scenarios.",
+      "items":[
+        {"name":"Sampling","value":"20 source scenarios with uniform probability; final profile uses 10 replications × 10 training scenarios and 1,000 out-of-sample draws","unit":"scenarios/draws","detail":"Random seed 20261002; the dashboard reports only profiles present in the selected run export.","source":"pipelines/stochastic_medical/settings.py; pipelines/stochastic_medical/run_saa.py"},
+        {"name":"TMC budgets","value":"0, 10, 25, 50, 100, 120","unit":"sites","detail":"The SAA policy selects within each site-count budget; TOPSIS candidate pool is limited to 120 when selected.","source":"pipelines/stochastic_medical/settings.py"},
+        {"name":"Casualty uncertainty","value":"Mean-one lognormal multiplier, sigma 0.20","unit":"multiplier","detail":"Applied to scenario casualty demand in sampled runs.","source":"pipelines/stochastic_medical/settings.py; pipelines/stochastic_medical/run_saa.py"},
+        {"name":"Road and hospital damage","value":"Road multiplier ~ Uniform(0, 0.30); hospital capacity loss = local damage × Uniform(0, 0.50)","unit":"fraction","detail":"Each SAA draw samples one road multiplier applied to all demand-facility pairs and one damage-loss multiplier per hospital. Unlike Paper LP, these SAA damage draws are not scaled by source-scenario severity.","source":"pipelines/stochastic_medical/run_saa.py; pipelines/stochastic_medical/settings.py"},
+        {"name":"Health transitions","value":"Untreated triage transitions only; treated-state transitions are not modeled in SAA","unit":"probability per period","detail":"Untreated: T1→D/T1 = 0.60/0.40; T2→T1/T2 = 0.55/0.45; T3→T2/T3 = 0.25/0.75. Treated casualties leave the untreated pool, but SAA does not model the Paper LP's treated-state progression or facility occupancy recursion.","source":"pipelines/stochastic_medical/settings.py; pipelines/stochastic_medical/solver_support.py"},
+        {"name":"T1 routing and staffing","value":"T1 can go only to hospitals within 12 km; 4 patients per doctor and 8 per nurse per period","unit":"km; patients per 12-hour period","detail":"Existing hospital staff counts are used where available; additional staffing is optimized. TMCs start with no base staff.","source":"pipelines/stochastic_medical/settings.py; pipelines/stochastic_medical/solver_support.py"},
+        {"name":"Capacity and objective weights","value":"Per-period capacity limits; unmet penalty = 10 × (maximum transport cost + maximum staffing cost); travel weight 1 per casualty-km; extra-staff weight 1,000 per staff-period","unit":"model cost units","detail":"Capacity is held constant across periods within each scenario. Hospital capacity is reduced by scenario damage; TMC T3 capacity is 3× its bed capacity. SAA has no separate TMC opening-cost term.","source":"pipelines/stochastic_medical/settings.py; pipelines/stochastic_medical/solver_support.py; pipelines/stochastic_medical/prep_support.py"}
+      ]
+    }
+  ]
+}

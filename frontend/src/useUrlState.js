@@ -6,8 +6,8 @@ import { useCallback, useEffect, useState } from 'react';
 // query params, not enough state to justify a routing dependency) so every
 // view is deep-linkable and state survives a reload.
 //
-// `run` is carried in the URL for shareability, but the public Pages build
-// serves one fixed reference snapshot rather than dynamically selected runs.
+// `run` is the selected saved-run ID. An empty value selects the committed
+// reference snapshot; uploaded-run IDs are resolved by the configured API.
 export const VIEWS = ['briefing', 'hazard', 'siting', 'medical', 'robustness', 'research'];
 export const MODELS = ['risk_blind', 'risk_aware', 'paper_lp', 'saa'];
 export const CANDIDATE_SETS = ['all_candidates', 'topsis_120'];

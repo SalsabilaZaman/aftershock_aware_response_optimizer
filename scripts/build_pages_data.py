@@ -1,6 +1,7 @@
 """Build static JSON endpoints for the GitHub Pages dashboard from CSV exports."""
 
 import json
+import argparse
 import shutil
 from pathlib import Path
 
@@ -66,6 +67,15 @@ def export_profile(kind: str, profile: str) -> dict:
 
 
 def main() -> None:
+    global SOURCE, DEST
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source", type=Path, default=SOURCE,
+                        help="CSV result bundle (defaults to examples/reference_results)")
+    parser.add_argument("--destination", type=Path, default=DEST,
+                        help="JSON API bundle (defaults to frontend/public/data/api)")
+    args = parser.parse_args()
+    SOURCE = args.source.resolve()
+    DEST = args.destination.resolve()
     if DEST.exists():
         shutil.rmtree(DEST)
     DEST.mkdir(parents=True, exist_ok=True)

@@ -119,7 +119,7 @@ export default function Briefing({ model, candidateSet = 'all_candidates', manif
   return <section>
     <div className="panel callout"><h3>Compare plans</h3>
       <div className="table-scroll"><table className="data"><thead><tr>{columns.map(([label]) => <th key={label}>{label}</th>)}</tr></thead><tbody>{planRows.map(([name, row]) => <tr key={name}><th scope="row">{name}</th>{columns.slice(1).map(([, key]) => <td key={key}>{num(key, row[key])}</td>)}</tr>)}</tbody></table></div>
-      <p className="muted">T1 means critical-priority casualties. The scenario-wise LP models T1 routing; the deterministic MILPs do not separate casualties by triage level.</p>
+      {/* <p className="muted"></p> */}
     </div>
     <div className="panel callout"><h3>Plan summary · {titles[model]}</h3><p className="muted">{stats.detail}</p></div>
     <div className="cards">

@@ -1,4 +1,25 @@
-// Published demo mode reads a frozen JSON export from GitHub Pages.
+// Reference results are served as static files; uploaded runs use the AARO API.
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8000' : '')).replace(/\/$/, '');
+let activeRunId = '';
+
+export function setActiveRunId(runId) { activeRunId = runId || ''; }
+export function getApiBase() { return API_BASE; }
+
+export async function backendFetch(path, options = {}) {
+  const url = API_BASE ? `${API_BASE}${path}` : `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
+  return fetch(url, options);
+}
+
+async function readResponse(res) {
+  if (res.ok) return res;
+  let detail = res.statusText || `HTTP ${res.status}`;
+  try {
+    const body = await res.json();
+    detail = typeof body.detail === 'string' ? body.detail : body.detail?.message || JSON.stringify(body.detail || body);
+  } catch { /* keep the HTTP status */ }
+  throw new Error(detail);
+}
+
 export async function fetchJson(path) {
   const [endpoint, query = ''] = path.split('?');
   const apiPath = endpoint.replace(/^\/api\/?/, '');
@@ -13,9 +34,19 @@ export async function fetchJson(path) {
   else if (/^solutions\/(risk_blind|risk_aware)$/.test(apiPath)) route = apiPath;
   else if (/^sites\/[^/]+$/.test(apiPath)) route = 'sites';
 
-  const url = new URL(`${import.meta.env.BASE_URL}data/api/${route}.json`, window.location.href);
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Published result unavailable (${res.status})`);
+  let res;
+  if (activeRunId) {
+    const url = new URL(`${API_BASE}/api/${route}.json`, window.location.href);
+    url.searchParams.set('run_id', activeRunId);
+    res = await fetch(url, { cache: 'no-store' });
+  } else {
+    const url = new URL(`${import.meta.env.BASE_URL}data/api/${route}.json`, window.location.href);
+    res = await fetch(url);
+  }
+  if (!res.ok) {
+    if (activeRunId) await readResponse(res);
+    throw new Error(`Published result unavailable (${res.status})`);
+  }
   if (!res.headers.get('content-type')?.includes('application/json')) {
     throw new Error(`Published result ${route}.json is missing or not JSON; regenerate it from the reference CSV bundle`);
   }
@@ -25,7 +56,10 @@ export async function fetchJson(path) {
     const siteId = decodeURIComponent(apiPath.slice('sites/'.length));
     const site = value.find((row) => String(row.site_id) === siteId);
     if (!site) throw new Error(`Unknown site_id ${siteId}`);
-    const statusUrl = new URL(`${import.meta.env.BASE_URL}data/api/site_status.json`, window.location.href);
+    const statusUrl = activeRunId
+      ? new URL(`${API_BASE}/api/site_status.json`, window.location.href)
+      : new URL(`${import.meta.env.BASE_URL}data/api/site_status.json`, window.location.href);
+    if (activeRunId) statusUrl.searchParams.set('run_id', activeRunId);
     const statusResponse = await fetch(statusUrl);
     const statuses = statusResponse.ok ? await statusResponse.json() : [];
     return { ...site, status: statuses.find((row) => String(row.site_id) === siteId) ?? null };

@@ -5,6 +5,7 @@ venv/
 node_modules/
 frontend/dist/
 frontend/node_modules/
+backend_data/
 .env
 .env.*
 !.env.example
