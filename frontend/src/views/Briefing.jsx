@@ -42,8 +42,23 @@ export default function Briefing({ model, candidateSet = 'all_candidates', manif
     const target = saaRows.find((r) => Number(r.budget) === 25) ?? saaRows.reduce((best, r) => Number(r.budget) < Number(best?.budget ?? Infinity) ? r : best, null);
     const saaSites = (data.saa?.policy_sites ?? []).filter((r) => Number(r.budget) === Number(target?.budget));
     const saaDemand = target ? Number(target.out_of_sample_expected_unmet_casualties) / Math.max(1e-9, 1 - Number(target.out_of_sample_expected_served_fraction)) : null;
+    const paperRows = data.paper?.scenario_rows ?? [];
+    const paperAlloc = data.paper?.casualty_allocation ?? [];
+    const paperWeights = new Map(paperRows.map((r) => [String(r.scenario_id), Number(r.scenario_prob || 0)]));
+    const paperUsed = new Set(paperAlloc.filter((r) => Number(r.assigned_casualties) > 0 &&
+      (r.facility_set === 'JT' || String(r.facility_id ?? '').startsWith('JT_') || !String(r.facility_id ?? '').startsWith('JH_')))
+      .map((r) => String(r.facility_id ?? '').replace(/^JT_/, '')).filter(Boolean));
+    const paperDemand = weighted(paperRows, 'Z1') + paperAlloc.reduce((total, row) => total +
+      (paperWeights.get(String(row.scenario_id)) || 0) * Number(row.assigned_casualties || 0), 0);
+    const paperUnmetT1 = (data.paper?.unmet_by_triage ?? []).filter((r) => r.triage === 'T1')
+      .reduce((total, r) => total + (paperWeights.get(String(r.scenario_id)) || 0) * Number(r.unmet_casualties || 0), 0);
+    const paperWeightedFlow = paperAlloc.reduce((total, r) => total + Number(paperWeights.get(String(r.scenario_id)) || 0) * Number(r.assigned_casualties || 0), 0);
+    const paperAvg = paperWeightedFlow ? paperAlloc.reduce((total, r) => total + Number(paperWeights.get(String(r.scenario_id)) || 0) * Number(r.assigned_casualties || 0) * Number(r.distance_km || 0), 0) / paperWeightedFlow : null;
+    const paperOver30 = paperWeightedFlow ? paperAlloc.filter((r) => Number(r.distance_km) > 30).reduce((total, r) => total + Number(paperWeights.get(String(r.scenario_id)) || 0) * Number(r.assigned_casualties || 0), 0) / paperWeightedFlow : null;
+    const paperUnsafe = data.sites ? [...paperUsed].filter((id) => Number(siteById[id]?.PGA_representative_g) > 0.2).length : null;
     return {
       blind: deterministic(data.blind, 'risk_blind'), aware: deterministic(data.aware, 'risk_aware'),
+      paper: { sites: paperUsed.size, unsafe: paperUnsafe, avg: paperAvg, over30: paperOver30, t1: paperUnmetT1, total: paperDemand },
       saa: { sites: data.saa?.policy_sites ? new Set(saaSites.map((r) => r.site_id)).size : null,
         unsafe: data.sites && target ? new Set(saaSites.filter((r) => Number(siteById[r.site_id]?.PGA_representative_g) > 0.2).map((r) => r.site_id)).size : null,
         avg: null, over30: null, t1: null, total: saaDemand },
@@ -92,7 +107,7 @@ export default function Briefing({ model, candidateSet = 'all_candidates', manif
   const columns = [
     ['Plan', null], ['Sites selected', 'sites'], ['Selected sites above 0.2 g', 'unsafe'], ['Average distance', 'avg'], ['Casualties travelling over 30 km', 'over30'], ['Untreated T1', 't1'],
   ];
-  const planRows = [['Risk-blind MILP', comparison.blind], ['Risk-aware MILP', comparison.aware], [`SAA · ${comparison.saaBudget}-site budget`, comparison.saa]];
+  const planRows = [['Risk-blind MILP', comparison.blind], ['Risk-aware MILP', comparison.aware], ['Scenario-wise LP · sites used', comparison.paper], [`SAA · ${comparison.saaBudget}-site budget`, comparison.saa]];
   const num = (key, value, plan) => value == null ? (key === 't1' && plan !== 'SAA' ? 'Not modeled' : 'Unavailable') : key === 'avg' ? `${fmt(value, 1)} km` : key === 'over30' ? fmtPct(value) : fmtInt(value);
   const isExpected = model === 'saa' || model === 'paper_lp';
   const statsSource = manifest?.scenarios?.[0]?.name ?? 'Selected validated run';
@@ -102,9 +117,9 @@ export default function Briefing({ model, candidateSet = 'all_candidates', manif
       : 'Scenario-wise LP uses scenario-specific demand (about 174,000 expected casualties) and has no first-stage site-opening decision; deterministic MILP allocates the fixed 117,398-casualty projection.';
 
   return <section>
-    <div className="panel callout"><h3>Compare plans</h3><p className="muted">Side-by-side outcome measures. The deterministic safety screen excludes 34 TMC candidates above 0.2 g; {comparison.swaps == null ? 'site swap count unavailable' : `${comparison.swaps} sites are swapped out for safety`}. SAA is shown at its {comparison.saaBudget ?? 'available'}-site budget.</p>
+    <div className="panel callout"><h3>Compare plans</h3><p className="muted">Scenario-wise LP chooses routes independently in each scenario and has no shared site budget. “Sites used” is the union of sites receiving flow across scenarios. SAA is shown at its {comparison.saaBudget ?? 'available'}-site budget; its service and unmet figures are out-of-sample expectations.</p>
       <div className="table-scroll"><table className="data"><thead><tr>{columns.map(([label]) => <th key={label}>{label}</th>)}</tr></thead><tbody>{planRows.map(([name, row]) => <tr key={name}><th scope="row">{name}</th>{columns.slice(1).map(([, key]) => <td key={key}>{num(key, row[key], name.startsWith('SAA') ? 'SAA' : 'MILP')}</td>)}</tr>)}</tbody></table></div>
-      <p className="muted">SAA exports a 25-site policy and expected service/unmet outcomes. Its detailed travel and triage file is one recorded recourse draw, so those measures are unavailable as like-for-like expectations. T1 is not modeled in either deterministic MILP.</p>
+      <p className="muted">T1 means critical-priority casualties. The scenario-wise LP models T1 routing; the deterministic MILPs do not separate casualties by triage level.</p>
     </div>
     <div className="panel callout"><h3>Plan summary · {titles[model]}</h3><p className="muted">{stats.detail}</p></div>
     <div className="cards">
