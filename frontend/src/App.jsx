@@ -195,7 +195,7 @@ export default function App() {
         ? <SAAResults profile={candidateSet} comparison />
         : model === 'paper_lp' ? <ProfileComparison model={model} sites={sites} />
           : <div className="notice info">Robustness results are unavailable for this model. Sensitivity and out-of-sample measures are only shown for exported stochastic runs.</div>)}
-      {view === 'research' && <ResearchLab model={model} candidateSet={candidateSet} detail={detail} manifest={manifest} />}
+      {view === 'research' && <ResearchLab model={model} />}
 
       {view !== 'hazard' && selectedProfileAvailable === false && <div className="notice info" role="status">{selectedModelLabel}{isCandidateProfileModel ? ` · ${candidateSetLabel}` : ''} results are not included in this data bundle.</div>}
 

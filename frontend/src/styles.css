@@ -161,6 +161,9 @@ body {
 .assumptions-panel .assumption-model h4 { font-weight: 500; font-size: .95rem; margin-bottom: .25rem; }
 .assumptions-panel .assumption-model p { margin: 0 0 var(--space-3); }
 .assumptions-panel h4 { margin-bottom: var(--space-2); }
+.assumptions-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-4); margin-top: var(--space-4); align-items: start; }
+.assumptions-layout .assumptions-panel { min-width: 0; }
+@media (max-width: 1100px) { .assumptions-layout { grid-template-columns: 1fr; } }
 
 .run-workspace { margin: 0 0 var(--space-4); }
 .welcome-page { width: min(1120px, calc(100% - 2rem)); margin: 0 auto; padding-top: var(--space-5); }
