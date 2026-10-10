@@ -15,6 +15,7 @@ import ProfileComparison from './views/ProfileComparison.jsx';
 import SAAMedicalResponse from './views/SAAMedicalResponse.jsx';
 import StochasticSiting from './views/StochasticSiting.jsx';
 import RunWorkspace from './views/RunWorkspace.jsx';
+import { downloadCsvZip } from './exportBundle.js';
 
 const TAB_LABELS = {
   briefing: 'Briefing', hazard: 'Hazard & site ranking', siting: 'Siting plan',
@@ -51,7 +52,9 @@ export default function App() {
         const [result, siteRows] = await Promise.all([fetchJson(`/api/paper-lp/${profile}`), fetchJson('/api/sites')]);
         bundle.casualty_allocations = result.casualty_allocation;
         bundle.staff_allocations = result.staffing_plan;
+        bundle.unmet_by_triage = result.unmet_by_triage;
         bundle.scenario_results = result.scenario_rows;
+        bundle.sensitivity_results = result.sensitivity_rows;
         const lpTotal = (key) => result.scenario_rows.reduce((sum, row) => sum + Number(row.scenario_prob || 0) * Number(row[key] || 0), 0);
         bundle.summary = { expected_served_fraction: lpTotal('served_fraction'), expected_unmet_casualties: lpTotal('Z1'), expected_Z2: lpTotal('Z2'), expected_Z3: lpTotal('Z3') };
         bundle.ranked_sites = siteRows.filter((s) => Number.isFinite(Number(s.rank))).sort((a, b) => Number(a.rank) - Number(b.rank));
@@ -73,9 +76,33 @@ export default function App() {
         bundle.selected_sites = result.tmc_selected;
       }
       bundle.run_identifiers = { model: model, mode: selectedModeKey, source: manifest?.data_source ?? null, generated_utc: manifest?.generated_utc ?? null };
-      const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url;
-      a.download = `earthquake-response-${model}-${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(url);
+      const csvFiles = {};
+      for (const key of ['casualty_allocations', 'staff_allocations', 'unmet_by_triage', 'scenario_results', 'sensitivity_results', 'budget_results', 'ranked_sites', 'selected_sites']) {
+        if (Array.isArray(bundle[key]) && bundle[key].length) csvFiles[`${key}.csv`] = bundle[key];
+      }
+      if (Array.isArray(bundle.policy_detail?.unmet) && bundle.policy_detail.unmet.length) {
+        csvFiles['unmet.csv'] = bundle.policy_detail.unmet;
+      }
+      const summary = [
+        'Earthquake Response Planning — exported results',
+        `Model: ${model}`,
+        `Candidate profile: ${profile ?? 'not applicable'}`,
+        `Run ID: ${bundle.run_id}`,
+        `Exported UTC: ${bundle.exported_at}`,
+        `Source generated UTC: ${bundle.run_identifiers?.generated_utc ?? 'unknown'}`,
+        `Selected dashboard view: ${view}`,
+        '',
+        'Summary metrics:',
+        ...Object.entries(bundle.summary ?? {}).map(([key, value]) => `  ${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`),
+        '',
+        'CSV files:',
+        ...Object.keys(csvFiles).map((name) => `  ${name}`),
+        '',
+        'Source identifiers:',
+        ...Object.entries(bundle.run_identifiers ?? {}).map(([key, value]) => `  ${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`),
+      ].join('\n');
+      await downloadCsvZip(csvFiles, summary,
+        `earthquake-response-${model}-${new Date().toISOString().slice(0, 10)}.zip`);
     } catch (e) { setError(`Export failed: ${e.message}`); }
   };
 
