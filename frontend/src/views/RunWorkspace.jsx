@@ -32,9 +32,17 @@ export default function RunWorkspace({ runId, onSelectRun, onEnterDashboard, onR
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [apiReady, setApiReady] = useState(false);
   const [error, setError] = useState('');
   const pollRef = useRef(null);
-  const apiReady = Boolean(getApiBase());
+
+  useEffect(() => {
+    let cancelled = false;
+    backendFetch('/api/runs').then((res) => {
+      if (!cancelled) setApiReady(res.ok);
+    }).catch(() => { if (!cancelled) setApiReady(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   const refreshRuns = async () => {
     try {
@@ -126,29 +134,30 @@ export default function RunWorkspace({ runId, onSelectRun, onEnterDashboard, onR
     if (entries.some((item) => item.status === 'running')) return 'running';
     return entries.every((item) => item.status === 'ok') ? 'ok' : 'pending';
   };
-  const currentName = runId ? runs.find((item) => item.run_id === runId)?.name ?? runId : 'Saved reference results';
+  const currentName = runId ? runs.find((item) => item.run_id === runId)?.name ?? runId : 'Kahramanmaraş · February 2023';
 
   return <section className="run-workspace panel" aria-label="Saved runs and dataset upload">
     <div className="run-workspace-heading">
-      <div><h2>Saved run · {currentName}</h2><p className="muted">Reference results are ready to view. Upload a prepared dataset bundle to create and save another run.</p></div>
-      <label className="run-picker">Open run
+      <h2>Open an analysis</h2>
+      <label className="run-picker" aria-label="Select analysis">
         <select value={runId || 'reference'} onChange={(event) => onSelectRun(event.target.value === 'reference' ? '' : event.target.value)}>
-          <option value="reference">Saved reference results</option>
+          <option value="reference">Saved reference analysis · Kahramanmaraş, February 2023</option>
           {runs.map((item) => <option value={item.run_id} key={item.run_id}>{item.name} · {item.state}</option>)}
         </select>
       </label>
       <button className="btn-primary" disabled={busy} onClick={onEnterDashboard}>
-        {runId ? 'Open selected run' : 'Enter AARO'}
+        Open analysis
       </button>
     </div>
 
     <div className="run-upload-row">
-      <div><b>Upload your data</b><p className="muted">Choose a ZIP containing the required <code>data_processed/</code> files below. Raw source data is optional and is not processed by this run flow.</p></div>
+      <div><b>Run a new analysis</b><p className="muted">Upload a prepared dataset ZIP file.</p></div>
       <input type="file" accept=".zip,application/zip" disabled={busy || !apiReady} onChange={(event) => setFile(event.target.files?.[0] ?? null)} aria-label="Choose prepared dataset ZIP" />
       <button className="btn-primary" disabled={!file || busy || !apiReady} onClick={startRun}>{busy ? 'Running…' : 'Upload & run'}</button>
     </div>
 
-    {!apiReady && <div className="notice info">Dataset runs are unavailable until <code>VITE_API_BASE_URL</code> is configured for the hosted AARO pipeline API. The saved reference results remain available.</div>}
+    {!apiReady && <div className="pipeline-status" role="status">Pipeline unavailable · New analyses are temporarily unavailable.</div>}
+    {!apiReady && import.meta.env.DEV && <details className="pipeline-diagnostics"><summary>Developer details</summary><code>{getApiBase() ? `Check the pipeline API at ${getApiBase()}.` : 'Configure VITE_API_BASE_URL to connect the pipeline API.'}</code></details>}
     {error && <div className="notice" role="alert">{error}</div>}
 
     {runId && status && <div className="run-progress">

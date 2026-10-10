@@ -22,13 +22,10 @@ const TAB_LABELS = {
 };
 const Brand = () => (
   <div className="brand">
-    <span className="brand-mark" aria-hidden="true">◆</span>
     <div>
-      <h1>Kahramanmaraş casualty response planning</h1>
-      <p className="subtitle">
-        Allocating earthquake casualties across hospitals and temporary medical centres in
-        Kahramanmaraş, weighted by 30-day aftershock hazard.
-      </p>
+      <div className="brand-kicker">AARO · AFTERSHOCK-AWARE RESPONSE OPTIMIZER</div>
+      <h1>Earthquake Response Planning</h1>
+      <p className="subtitle">Allocate casualties across medical facilities while accounting for aftershock risk.</p>
     </div>
   </div>
 );
@@ -114,11 +111,6 @@ export default function App() {
     return (
       <div className="app welcome-page">
         <header className="welcome-header"><Brand /></header>
-        <section className="welcome-hero">
-          <p className="eyebrow">Aftershock Aware Response Optimizer</p>
-          <h2>Plan an earthquake casualty response</h2>
-          <p>Explore the saved reference analysis or run the AARO pipeline with a prepared dataset bundle.</p>
-        </section>
         <RunWorkspace
           runId={run}
           onSelectRun={setRun}

@@ -64,6 +64,6 @@ export default function StochasticSiting({ model, profile = 'all_candidates', sc
       {hospitals.map((h) => <CircleMarker key={`h-${h.hospital_id}`} center={[Number(h.latitude), Number(h.longitude)]} radius={7} pathOptions={{ color: '#9c4c40', fillColor: '#d67c6d', fillOpacity: .9 }}><Tooltip>{h.hospital_name} · hospital</Tooltip></CircleMarker>)}
       {[...usedIds].map((id) => { const s = siteById[id] ?? siteById[String(id).replace(/^JT_/, '')]; return s ? <CircleMarker key={`s-${id}`} center={[Number(s.latitude), Number(s.longitude)]} radius={5} pathOptions={{ color: '#246345', fillColor: '#57a579', fillOpacity: .9 }}><Tooltip>{s.display_name || s.name || id} · TMC used</Tooltip></CircleMarker> : null; })}
     </MapContainer><div className="legend"><b>Allocation overview</b><div>● Demand point</div><div>● Hospital</div><div>● TMC used</div><small>Showing up to 90 largest flows</small></div></div>
-    <p className="muted">Scenario-wise LP TMCs are called used when they receive casualty flow; the model has no explicit site-opening decision. Routes show the largest exported allocation flows for readability.</p>
+    {/* <p className="muted">Scenario-wise LP TMCs are called used when they receive casualty flow; the model has no explicit site-opening decision. Routes show the largest exported allocation flows for readability.</p> */}
   </section>;
 }
