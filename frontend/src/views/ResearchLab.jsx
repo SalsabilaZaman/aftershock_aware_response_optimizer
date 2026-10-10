@@ -21,7 +21,7 @@ export default function ResearchLab({ model }) {
 
     <div className="panel assumptions-panel">
       <h3>Selected model assumptions</h3>
-      <p className="muted">“Not modeled” means the selected model does not include that mechanism.</p>
+      {/* <p className="muted">“Not modeled” means the selected model does not include that mechanism.</p> */}
       {selectedModel
         ? <div className="assumption-model">
           <h4>{selectedModel.name}</h4>

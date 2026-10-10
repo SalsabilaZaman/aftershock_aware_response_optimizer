@@ -27,17 +27,15 @@
       "items":[
         {"name":"Demand","value":"Casualty scenario 1; all periods are aggregated","unit":"casualties","detail":"Every demand point must be fully allocated to a hospital or selected TMC.","source":"pipelines/deterministic_current/settings.py; pipelines/deterministic_current/prep_support.py"},
         {"name":"Objective","value":"distance_km × assigned casualties + 1,000 per opened TMC","unit":"casualty-km","detail":"The opening penalty is a judgment-chosen tradeoff, not a monetary facility cost. C_TRANS=1 defines the objective units.","source":"pipelines/deterministic_current/settings.py; pipelines/deterministic_current/solver_support.py"},
-        {"name":"Candidate eligibility","value":"All prepared TMC candidates","unit":"sites","detail":"No PGA safety exclusion is applied.","source":"pipelines/deterministic_current/settings.py; pipelines/deterministic_current/prep_support.py"},
-        {"name":"Health transitions and staffing productivity","value":"Not modeled","unit":"—","detail":"This deterministic model has no triage, health-state transitions, staff variables, or period-level treatment capacity.","source":"pipelines/deterministic_current/solver_support.py"}
+        {"name":"Candidate eligibility","value":"All prepared TMC candidates","unit":"sites","detail":"No PGA safety exclusion is applied.","source":"pipelines/deterministic_current/settings.py; pipelines/deterministic_current/prep_support.py"}
       ]
     },
     {
       "id":"risk_aware","name":"Risk-aware deterministic MILP","summary":"Same deterministic facility-location model, with an aftershock PGA eligibility screen.",
       "items":[
         {"name":"Demand and objective","value":"Same as risk-blind deterministic MILP","unit":"casualties; casualty-km","detail":"Scenario 1 demand is aggregated; travel burden is minimized with a 1,000 casualty-km opening penalty per TMC.","source":"pipelines/deterministic_current/settings.py; pipelines/deterministic_current/solver_support.py"},
-        {"name":"Candidate eligibility","value":"Exclude candidates with representative PGA > 0.2","unit":"g","detail":"The representative value is the maximum median PGA for significant observed aftershocks. This is a deterministic screen, separate from P(unsafe).","source":"pipelines/deterministic_current/prep_support.py; pipelines/deterministic_current/settings.py"},
-        {"name":"Health transitions and staffing productivity","value":"Not modeled","unit":"—","detail":"This deterministic model has no triage, health-state transitions, staff variables, or period-level treatment capacity.","source":"pipelines/deterministic_current/solver_support.py"}
-      ]
+        {"name":"Candidate eligibility","value":"Exclude candidates with representative PGA > 0.2","unit":"g","detail":"The representative value is the maximum median PGA for significant observed aftershocks. This is a deterministic screen, separate from P(unsafe).","source":"pipelines/deterministic_current/prep_support.py; pipelines/deterministic_current/settings.py"}
+        ]
     },
     {
       "id":"paper_lp","name":"Scenario-wise Paper LP","summary":"Solves one continuous medical response LP for each of 20 casualty scenarios.",

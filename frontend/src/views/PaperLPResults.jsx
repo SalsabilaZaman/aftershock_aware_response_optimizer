@@ -78,7 +78,7 @@ export default function PaperLPResults({ profile = 'all_candidates', scenarioId 
         {scenarioId === 'all' && <p><strong>{fmtInt(expectedT1)} critical (T1) casualties untreated.</strong> T1 routing is hospital-only within 12 km, so adding TMCs does not change the T1 outcome.</p>}
       </div>
       <div className="filter-row"><label>Scenario: <select className="scenario" value={scenarioId} onChange={(e) => onScenarioChange(e.target.value)}><option value="all">All scenarios (probability weighted)</option>{result.scenario_rows.map((r) => <option key={r.scenario_id} value={r.scenario_id}>Scenario {r.scenario_id} · {pct(r.scenario_prob)} probability</option>)}</select></label></div>
-      <div className="cards">
+      <div className="cards paper-lp-metrics">
         <div className="stat-card"><div className="label">Total expected casualties</div><div className="value">{fmtInt(expectedCasualties)}</div><div className="sub">Scenario weighted · independent LPs</div></div>
         <div className="stat-card"><div className="label">{scenarioId === 'all' ? 'Probability-weighted served' : 'Scenario demand served'}</div><div className="value">{pct(weighted('served_fraction'))}</div></div>
         <div className="stat-card serious"><div className="label">{scenarioId === 'all' ? 'Critical (T1) casualties untreated' : 'Critical (T1) untreated · selected scenario'}</div><div className="value">{fmtInt(expectedT1)}</div><div className="sub">Hospital-only routing within 12 km</div></div>
