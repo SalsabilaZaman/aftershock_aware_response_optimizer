@@ -136,9 +136,10 @@ export default function RunWorkspace({ runId, onSelectRun, onEnterDashboard, onR
   };
   const currentName = runId ? runs.find((item) => item.run_id === runId)?.name ?? runId : 'Kahramanmaraş · February 2023';
 
-  return <section className="run-workspace panel" aria-label="Saved runs and dataset upload">
+  return <div className="run-workspace" aria-label="Saved analyses and new analysis">
+    <section className="run-section saved-analysis-section">
     <div className="run-workspace-heading">
-      <h2>Open an analysis</h2>
+      <h2>Open a saved analysis</h2>
       <label className="run-picker" aria-label="Select analysis">
         <select value={runId || 'reference'} onChange={(event) => onSelectRun(event.target.value === 'reference' ? '' : event.target.value)}>
           <option value="reference">Saved reference analysis · Kahramanmaraş, February 2023</option>
@@ -149,14 +150,16 @@ export default function RunWorkspace({ runId, onSelectRun, onEnterDashboard, onR
         Open analysis
       </button>
     </div>
+    </section>
 
-    <div className="run-upload-row">
-      <div><b>Run a new analysis</b><p className="muted">Upload a prepared dataset ZIP file.</p></div>
-      <input type="file" accept=".zip,application/zip" disabled={busy || !apiReady} onChange={(event) => setFile(event.target.files?.[0] ?? null)} aria-label="Choose prepared dataset ZIP" />
-      <button className="btn-primary" disabled={!file || busy || !apiReady} onClick={startRun}>{busy ? 'Running…' : 'Upload & run'}</button>
-    </div>
+    <section className="run-section new-analysis-section">
+      <div className="run-upload-row">
+        <div><h2>Run a new analysis</h2><p className="muted">Upload a prepared dataset ZIP file.</p></div>
+        <input className="dataset-file-input" type="file" accept=".zip,application/zip" disabled={busy || !apiReady} onChange={(event) => setFile(event.target.files?.[0] ?? null)} aria-label="Choose prepared dataset ZIP" />
+        <button className="btn-primary" disabled={!file || busy || !apiReady} onClick={startRun}>{busy ? 'Running…' : 'Upload & run'}</button>
+      </div>
 
-    {!apiReady && <div className="pipeline-status" role="status">Pipeline unavailable · New analyses are temporarily unavailable.</div>}
+    {!apiReady && <div className="pipeline-status" role="status">New analyses are currently unavailable.</div>}
     {!apiReady && import.meta.env.DEV && <details className="pipeline-diagnostics"><summary>Developer details</summary><code>{getApiBase() ? `Check the pipeline API at ${getApiBase()}.` : 'Configure VITE_API_BASE_URL to connect the pipeline API.'}</code></details>}
     {error && <div className="notice" role="alert">{error}</div>}
 
@@ -176,5 +179,6 @@ export default function RunWorkspace({ runId, onSelectRun, onEnterDashboard, onR
       <div className="table-scroll"><table className="data"><thead><tr><th>File path</th><th>Required columns</th></tr></thead><tbody>{INPUTS.map(([path, columns]) => <tr key={path}><td><code>{path}</code></td><td>{columns}</td></tr>)}</tbody></table></div>
       <p className="muted">The uploaded ZIP may contain a single enclosing folder. The pipeline uses these processed files; it does not fetch or extract raw datasets.</p>
     </details>
-  </section>;
+    </section>
+  </div>;
 }
